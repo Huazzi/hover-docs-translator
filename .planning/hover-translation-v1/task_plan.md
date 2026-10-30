@@ -1,6 +1,6 @@
 # Feature Plan
 
-- Feature: Python/JavaScript 云端 API 悬停文档翻译；本轮仅调研、澄清和详细设计。
+- Feature: Python/JavaScript 云端 API 悬停文档翻译；用户已批准方案 A、创建仓库和实施。
 - Plan ID: hover-translation-v1
 - Risk classification: high（后续涉及密钥、文档外发和并发请求；本轮无实现）
 - Current phase: 5 - Approved Implementation
@@ -20,7 +20,7 @@
 - [x] 2. Codebase exploration pass complete
 - [x] 3. Clarifying questions and Gate A resolved when required
 - [x] 4. Architecture design pass complete
-- [ ] 5. Gate B approved and implementation complete
+- [x] 5. Gate B approved and implementation complete
 - [ ] 6. Verification and quality review pass complete
 - [ ] 7. Gate C approved and final summary delivered
 

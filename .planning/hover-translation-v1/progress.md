@@ -4,10 +4,15 @@
 
 - 2026-10-30：读取需求和技术草案、技能、模板；初始化计划。启动三个只读探索代理；发出 Gate A 澄清问题。尚无用户回答。
 - 用户已逐项回复三问；Gate A 已确认，环境按推荐。即将进入三个独立架构视角，仍只产出文档。
+- 用户明确接受方案 A，授权 Git 仓库与实施；Gate B 通过，执行 Phase 5。
 
 ## Implementation Milestones
 
-- 
+- 初始化 main Git 仓库，设计基线提交 0feee48；工程固定 VS Code 1.144.0 类型与实际本机稳定版。
+- 原型：真实 Pylance、内置 JS 的函数/外部类均返回原 Hover，自调用次数为 2；异步假译文能返回。
+- 实际窗口 DOM 验证通过：先显示英文，2 秒假翻译完成后同窗出现中文；生产 provider/AST/缓存链路通过。
+- 完成用户级配置、endpoint 绑定 SecretStorage、首次云端同意、内存缓存、共享请求取消、Markdown AST、安全渲染和命令菜单。
+- 首次集成测试将机器级设置写入 Workspace 被 VS Code 拒绝（符合安全设计）；测试改为断言拒绝，继续进行完整验证。
 
 ## Verification
 
@@ -20,5 +25,5 @@
 
 ## Remaining Work
 
-- detailed-design.md 已交付，Gate B 等待架构评审；用户当前要求止于设计，暂不进入 Phase 5。
-- 后续若获实施授权，首先验证采集重入和冷请求异步展示；不跳过阻断门槛。
+- 实施与聚焦验证完成，VSIX 已打包；即将进行三个独立代码审查，Gate C 尚未确认，功能生命周期不标记完成。
+- 未进行真实云端付费请求；实际供应商兼容和完整 requests/lodash 矩阵为明确验证缺口，见 verification.md。

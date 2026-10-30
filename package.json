@@ -1,0 +1,196 @@
+{
+  "name": "hover-docs-translator",
+  "displayName": "Hover Docs Translator",
+  "description": "Translate Python and JavaScript hover documentation into Chinese using your cloud API.",
+  "version": "0.1.0",
+  "publisher": "local-hover-docs",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.144.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:python",
+    "onLanguage:javascript"
+  ],
+  "main": "./dist/extension.cjs",
+  "extensionKind": [
+    "ui"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test:unit": "tsx --test test/unit/*.test.ts",
+    "test:integration": "node scripts/integration.mjs",
+    "package": "vsce package --no-dependencies --allow-missing-repository --no-rewrite-relative-links",
+    "vscode:prepublish": "npm run build"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "hoverDocsTranslator.menu",
+        "title": "中文文档：打开菜单"
+      },
+      {
+        "command": "hoverDocsTranslator.configure",
+        "title": "中文文档：配置接口、模型与密钥"
+      },
+      {
+        "command": "hoverDocsTranslator.setApiKey",
+        "title": "中文文档：设置 API Key"
+      },
+      {
+        "command": "hoverDocsTranslator.clearApiKeys",
+        "title": "中文文档：清除全部 API Key"
+      },
+      {
+        "command": "hoverDocsTranslator.grantConsent",
+        "title": "中文文档：确认云端发送"
+      },
+      {
+        "command": "hoverDocsTranslator.revokeConsent",
+        "title": "中文文档：撤回云端发送同意"
+      },
+      {
+        "command": "hoverDocsTranslator.toggle",
+        "title": "中文文档：暂停/恢复自动翻译"
+      },
+      {
+        "command": "hoverDocsTranslator.toggleDisplay",
+        "title": "中文文档：切换中英对照"
+      },
+      {
+        "command": "hoverDocsTranslator.clearCache",
+        "title": "中文文档：清空缓存"
+      },
+      {
+        "command": "hoverDocsTranslator.showDiagnostics",
+        "title": "中文文档：打开诊断日志"
+      }
+    ],
+    "configuration": {
+      "title": "Hover Docs Translator",
+      "properties": {
+        "hoverDocsTranslator.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "machine",
+          "description": "启用自动翻译。配置密钥并确认云端发送后才发起请求。"
+        },
+        "hoverDocsTranslator.apiBaseUrl": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "HTTPS API 根路径。供应商要求 /v1 时请保留；程序追加 /chat/completions。"
+        },
+        "hoverDocsTranslator.model": {
+          "type": "string",
+          "default": "",
+          "scope": "machine",
+          "description": "供应商支持的模型名称。"
+        },
+        "hoverDocsTranslator.displayMode": {
+          "type": "string",
+          "enum": [
+            "translationOnly",
+            "paired"
+          ],
+          "default": "translationOnly",
+          "scope": "machine",
+          "description": "插件区块显示方式。原语言服务的英文始终保留。"
+        },
+        "hoverDocsTranslator.maxChars": {
+          "type": "number",
+          "default": 6000,
+          "minimum": 100,
+          "maximum": 30000,
+          "scope": "machine",
+          "description": "单次翻译文本字符预算。"
+        },
+        "hoverDocsTranslator.discoveryTimeoutMs": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 100,
+          "maximum": 30000,
+          "scope": "machine",
+          "description": "读取原始说明的消费者等待上限（毫秒）。"
+        },
+        "hoverDocsTranslator.requestTimeoutMs": {
+          "type": "number",
+          "default": 15000,
+          "minimum": 1000,
+          "maximum": 60000,
+          "scope": "machine",
+          "description": "云端请求超时（毫秒）。"
+        },
+        "hoverDocsTranslator.maxConcurrentRequests": {
+          "type": "number",
+          "default": 2,
+          "minimum": 1,
+          "maximum": 4,
+          "scope": "machine",
+          "description": "云端并发请求上限。"
+        },
+        "hoverDocsTranslator.maxQueueSize": {
+          "type": "number",
+          "default": 8,
+          "minimum": 0,
+          "maximum": 20,
+          "scope": "machine",
+          "description": "等待请求队列上限。"
+        },
+        "hoverDocsTranslator.requestsPerMinute": {
+          "type": "number",
+          "default": 20,
+          "minimum": 1,
+          "maximum": 120,
+          "scope": "machine",
+          "description": "每分钟新请求上限，缓存命中不计入。"
+        },
+        "hoverDocsTranslator.cacheMaxEntries": {
+          "type": "number",
+          "default": 500,
+          "minimum": 1,
+          "maximum": 2000,
+          "scope": "machine",
+          "description": "进程内缓存条目上限，总容量另限制为 10 MiB。"
+        },
+        "hoverDocsTranslator.cacheTtlMinutes": {
+          "type": "number",
+          "default": 1440,
+          "minimum": 1,
+          "maximum": 10080,
+          "scope": "machine",
+          "description": "进程内缓存有效时间（分钟），退出后清空。"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "remark-gfm": "4.0.1",
+    "remark-parse": "11.0.0",
+    "remark-stringify": "11.0.0",
+    "unified": "11.0.5"
+  },
+  "devDependencies": {
+    "@types/mdast": "4.0.4",
+    "@types/node": "26.6.6",
+    "@types/vscode": "1.144.0",
+    "@vscode/test-electron": "3.1.0",
+    "@vscode/vsce": "4.1.0",
+    "esbuild": "0.28.2",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2"
+  }
+}

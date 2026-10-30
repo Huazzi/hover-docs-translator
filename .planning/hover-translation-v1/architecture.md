@@ -2,7 +2,7 @@
 
 ## Context
 
-- 本轮目标为详细设计文档；尚未进入架构选型。实现不在用户授权范围。
+- 设计阶段已结束；用户明确批准方案 A 并授权 Git 仓库和实施。
 - Gate A 已确认：用户选择保留英文追加中文；Python/JavaScript 中有文档符号皆可翻译，首次启用确认云端发送；验证环境/API/远程需求由用户授权“按推荐”。
 - 据此采用首版验证基线：Windows 本地 VS Code 桌面；Microsoft Python + Pylance，JavaScript 内置 TS 服务；Python pathlib/requests、JS Node API/lodash；OpenAI 兼容 Chat Completions、用户自选云端模型；远程扩展主机列为后续适配。
 - 待用户回答后启动三个只读架构子代理，再整合 detailed-design.md 并提交 Gate B。
@@ -23,7 +23,7 @@
 
 ## Recommended Option
 
-- Recommendation: 方案 A，待用户架构选择。
+- Recommendation: 方案 A，用户已批准实施。
 - Rationale: 三个独立架构报告对比后优先有界的自身重入行为，公开记录漏译窗口。
 - File change map: detailed-design.md 第 9 节；当前只新增 research.md、detailed-design.md，更新两份草案与规划。
 - Data flow and error handling: detailed-design.md 第 3–8 节。

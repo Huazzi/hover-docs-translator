@@ -1,0 +1,13 @@
+.planning/**
+.vscode/**
+.vscode-test/**
+.test-extensions/**
+node_modules/**
+src/**
+test/**
+scripts/**
+dist/test/**
+*.ts
+tsconfig.json
+package-lock.json
+.gitignore
