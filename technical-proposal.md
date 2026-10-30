@@ -1,6 +1,6 @@
 # 悬停文档中文翻译插件：技术方案
 
-状态：首版技术方案草案；[详细设计](detailed-design.md)方案 A 已批准实施，验证进展见 [verification.md](verification.md)  
+状态：首版技术方案草案；[详细设计](detailed-design.md)方案 A 已批准实施，验证进展见 [verification.md](verification.md)
 日期：2026-10-30  
 对应需求：[requirements.md](requirements.md)
 

@@ -1,7 +1,7 @@
 # 悬停文档中文翻译插件：详细设计
 
 版本：0.1，2026-10-30  
-状态：方案 A 已由用户批准并进入实施；当前实现与验证范围见 [verification.md](verification.md)  
+状态：方案 A 已由用户批准并进入实施；当前实现与验证范围见 [verification.md](verification.md)
 输入：[需求](requirements.md)、[技术草案](technical-proposal.md)、[源码调研](research.md)
 
 ## 1. 已确认的需求与支持基线

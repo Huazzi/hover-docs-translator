@@ -19,4 +19,4 @@ for (const input of Object.keys(result.metafile.inputs)) {
     dir = dirname(dir);
   }
 }
-await writeFile('THIRD_PARTY_NOTICES.md', '# Bundled dependency notices\n\n' + [...packages.values()].join('\n'));
+await writeFile('THIRD_PARTY_NOTICES.md', ('# Bundled dependency notices\n\n' + [...packages.values()].join('\n')).trimEnd() + '\n');
