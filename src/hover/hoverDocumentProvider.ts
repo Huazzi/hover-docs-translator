@@ -17,6 +17,13 @@ export function createHoverProvider(deps: ProviderDependencies): vscode.HoverPro
     if (!config?.enabled || token.isCancellationRequested || document.uri.scheme !== 'file' || !['python', 'javascript'].includes(document.languageId)) return undefined;
     const controller = new AbortController();
     const subscription = token.onCancellationRequested(() => controller.abort());
+    const sameDocument = (changed: vscode.TextDocument) => changed.uri.toString() === document.uri.toString();
+    const changed = vscode.workspace.onDidChangeTextDocument(event => { if (sameDocument(event.document)) controller.abort(); });
+    const closed = vscode.workspace.onDidCloseTextDocument(doc => { if (sameDocument(doc)) controller.abort(); });
+    // Closing a tab does not always immediately unload its TextDocument model.
+    const tabs = vscode.window.tabGroups.onDidChangeTabs(event => {
+      if (event.closed.some(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === document.uri.toString())) controller.abort();
+    });
     const version = document.version;
     const valid = () => !controller.signal.aborted && !document.isClosed && document.version === version && deps.settings()?.revision === config.revision;
     try {
@@ -39,6 +46,6 @@ export function createHoverProvider(deps: ProviderDependencies): vscode.HoverPro
       const code = error && typeof error === 'object' && 'code' in error && typeof error.code === 'string' ? error.code : 'translation_failed';
       if (code !== 'cancelled') deps.onError(code);
       return undefined;
-    } finally { subscription.dispose(); }
+    } finally { subscription.dispose(); changed.dispose(); closed.dispose(); tabs.dispose(); }
   } };
 }

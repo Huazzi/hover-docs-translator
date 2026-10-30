@@ -3,7 +3,7 @@
 ## Review Inputs
 
 - Approved architecture: 用户明确批准方案 A 和实施，见 architecture.md Gate B。
-- Diff reviewed: range 0feee48..efa82c234498cd78acff876a426ae22d3df0a383，三个只读审查进行中。
+- Diff reviewed: 初版 range 0feee48..efa82c234498cd78acff876a426ae22d3df0a383，三个只读审查已完成；随后执行用户批准的修复与针对性回归。
 - Verification already run: 类型检查、15 单元测试、真实 Pylance/JS 扩展宿主、实际 DOM 异步展示与缓存、VSIX 打包。
 
 ## Scope and Coverage
@@ -39,11 +39,23 @@
 
 ## No-Finding Statements
 
-- 
+- 初版并非 No findings；5 项问题已按用户批准处置修复，覆盖见下表。修复后未重复声明完整独立审查。
+
+## Approved Disposition Results
+
+| 问题 | 结果 | 验证 |
+| --- | --- | --- |
+| 零散 Text 缺上下文/短句漏译 | 已修复：整段 + 内联占位符，本地恢复 AST | 短句、条件返回、嵌套强调/链接及标记缺失/重复/未知值回归 |
+| 引用链接丢失 | 已修复：按源文档解析定义并验证 HTTP(S) | full/collapsed/shortcut、安全与不安全引用、跨 Hover 定义隔离回归 |
+| 裸签名误送云端 | 已修复：保守识别裸调用和 JS/Python 签名 | JS、Python、async、class 及含 API 调用的正常句子回归 |
+| 文档失效未主动取消 | 已修复：监听内容、文档关闭与标签关闭；统一 abort/dispose | 真实宿主修改/关闭 × 排队/执行四种组合通过 |
+| 并发缩短冷却 | 已修复：单调保留较晚截止时间 | 429→500、429→timeout 的并发回归通过 |
+
+类型检查、21 单元测试、实际 VS Code/Pylance/JS 和 DOM 测试通过；VSIX 重新打包。没有真实云端付费调用。
 
 ## Gate C Approval
 
 - Proposed actions: 修复全部 5 项 P2，补有针对性的回归测试，重新执行类型检查/单测/必要集成与打包；实施的架构保持不变。
-- User approval: pending；未对这些发现做任何代码修正。
-- Approval timestamp: 未批准。
+- User approval: approved；用户明确批准修复全部 5 项、补充回归测试并重新打包。
+- Approval timestamp: 2026-10-30，当前会话。
 - Accepted residual risks: 真实云端供应商联调、第三方包矩阵及采集窗口漏译仍需后续验收；尚未被用户作为终态风险接受。

@@ -3,7 +3,7 @@
 - Feature: Python/JavaScript 云端 API 悬停文档翻译；用户已批准方案 A、创建仓库和实施。
 - Plan ID: hover-translation-v1
 - Risk classification: high（后续涉及密钥、文档外发和并发请求；本轮无实现）
-- Current phase: 6 - Independent Quality Review 已结束；Gate C 待用户确认 5 项 P2 的修复处置
+- Current phase: 7 - Approved Summary（批准修复与回归完成）
 - Owner: feature-dev-codex orchestrator
 
 ## Approval Gates
@@ -12,7 +12,7 @@
 | --- | --- | --- | --- |
 | A | Scope and critical decisions | approved | 用户已明确接受追加中文、全部文档符号可翻译并首次确认云端发送；其余环境按推荐 |
 | B | Architecture selection | approved | 2026-10-30 用户明确接受推荐方案并要求创建 Git 仓库、开始实施 |
-| C | Review disposition | pending after review | pending |
+| C | Review disposition | approved | 用户明确批准全部 5 项修复、回归和重新打包 |
 
 ## Seven Phases
 
@@ -22,7 +22,7 @@
 - [x] 4. Architecture design pass complete
 - [x] 5. Gate B approved and implementation complete
 - [x] 6. Verification and quality review pass complete（聚焦验证通过，三个只读审查已结束，发现 5 项 P2）
-- [ ] 7. Gate C approved and final summary delivered
+- [x] 7. Gate C approved, approved fixes verified and final summary prepared
 
 ## Constraints and Non-Goals
 
@@ -62,4 +62,5 @@
 
 ### Phase 7: Summary
 
--
+- 5 项批准修复已完成；21 单元测试、类型检查及真实宿主/DOM/取消集成通过。重新打包 VSIX，仓库保存修复提交。
+- 真实云端供应商与模型未联调、完整第三方包矩阵未覆盖，作为公开验证范围记录在 verification.md；不宣称这些项目已通过。

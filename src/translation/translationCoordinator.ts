@@ -16,7 +16,7 @@ export class TranslationCoordinator {
   acquire(segments: Segment[], config: ServiceConfig, signal: AbortSignal): Promise<Translations> {
     if (signal.aborted) return Promise.reject(new TranslationError('cancelled'));
     if (this.blocked) return Promise.reject(new TranslationError('configuration_blocked'));
-    const key = createHash('sha256').update(JSON.stringify([segments, config.endpoint, config.model, config.revision, 'zh-CN', 'prompt1-codec1'])).digest('hex');
+    const key = createHash('sha256').update(JSON.stringify([segments, config.endpoint, config.model, config.revision, 'zh-CN', 'prompt2-codec2'])).digest('hex');
     const cached = this.cache.get(key); if (cached) return Promise.resolve(cached);
     let task = this.tasks.get(key);
     if (!task) {
@@ -81,7 +81,7 @@ export class TranslationCoordinator {
       const e = timedOut ? new TranslationError('timeout') : error instanceof TranslationError ? error : new TranslationError(task.controller.signal.aborted ? 'cancelled' : 'network');
       if (task.generation === this.generation && (!task.controller.signal.aborted || timedOut)) {
         if (['http_401', 'http_403', 'http_404', 'protocol', 'missing_key'].includes(e.code)) this.blocked = true;
-        this.cooldownUntil = Date.now() + Math.max(e.cooldownMs, 5000); this.onError(e.code);
+        this.cooldownUntil = Math.max(this.cooldownUntil, Date.now() + Math.max(e.cooldownMs, 5000)); this.onError(e.code);
       }
       this.finish(task, undefined, e);
     } finally { clearTimeout(timer); this.active--; this.onActivity(this.active); this.drain(); }

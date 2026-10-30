@@ -6,6 +6,7 @@ import { TranslationCoordinator } from '../../src/translation/translationCoordin
 import { MemoryTranslationCache } from '../../src/cache/memoryTranslationCache.js';
 import { readSettings, userSetting, type Settings } from '../../src/config/settingsService.js';
 import { hoverText } from './renderer.js';
+import { cancellationRegression } from './cancellation.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export async function run(): Promise<void> {
@@ -77,4 +78,5 @@ export async function run(): Promise<void> {
     assert.equal(readSettings(1)?.endpoint, 'https://safe.example/v1/chat/completions');
     console.log('CONFIG PASS workspace cannot redirect user credentials');
   } finally { registered.dispose(); pool.reset(); }
+  await cancellationRegression(settings);
 }

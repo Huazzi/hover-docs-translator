@@ -62,3 +62,24 @@ test('client timeout releases task slot even if transport ignores cancellation',
   const pool = new TranslationCoordinator(async () => new Promise(() => {}), new MemoryTranslationCache());
   await assert.rejects(pool.acquire(segments, { ...config, timeoutMs: 5 }, signal()), /timeout/);
 });
+test('concurrent 500 and timeout cannot shorten a prior 429 Retry-After', async () => {
+  const originalNow = Date.now; let now = originalNow();
+  Date.now = () => now;
+  try {
+    for (const laterFailure of ['http_500', 'timeout']) {
+      const rejects: ((error: Error) => void)[] = []; let calls = 0;
+      const pool = new TranslationCoordinator(async () => { calls++; return new Promise((_resolve, reject) => rejects.push(reject)); }, new MemoryTranslationCache());
+      const first = pool.acquire(segments, config, signal()); const firstCheck = assert.rejects(first, /http_429/);
+      const second = pool.acquire([{ id: 's0', text: 'other paragraph' }], config, signal()); const secondCheck = assert.rejects(second, new RegExp(laterFailure));
+      rejects[0](new TranslationError('http_429', 120000)); await firstCheck;
+      rejects[1](new TranslationError(laterFailure)); await secondCheck;
+      now += 6000;
+      await assert.rejects(pool.acquire([{ id: 's0', text: 'must stay blocked' }], config, signal()), /cooldown/);
+      assert.equal(calls, 2);
+      now += 115000;
+      const after = pool.acquire([{ id: 's0', text: 'after original deadline' }], config, signal());
+      const afterCheck = assert.rejects(after, /cancelled/); assert.equal(calls, 3);
+      pool.reset(); await afterCheck; rejects[2](new TranslationError('cancelled')); await tick();
+    }
+  } finally { Date.now = originalNow; }
+});
