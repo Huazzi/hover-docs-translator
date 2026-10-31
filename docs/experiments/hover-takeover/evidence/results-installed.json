@@ -1,0 +1,123 @@
+{
+  "vscode": "1.144.0",
+  "extensionMode": "production",
+  "runId": "1793464737181",
+  "extensions": {
+    "ms-python.python": "2026.10.0",
+    "ms-python.vscode-pylance": "2026.4.1",
+    "vscode.typescript-language-features": "10.0.0"
+  },
+  "cases": [
+    {
+      "case": "baseline",
+      "file": "sample.js",
+      "sourceCount": 1,
+      "definitions": 1,
+      "signatureCount": 1
+    },
+    {
+      "case": "baseline",
+      "file": "sample.py",
+      "sourceCount": 1,
+      "definitions": 1,
+      "signatureCount": 1
+    },
+    {
+      "case": "exclusive-paired",
+      "file": "sample.js",
+      "hoverCount": 1,
+      "selfCalls": 1,
+      "duplicateEnglish": false,
+      "externalSourceCount": 1,
+      "definitions": 1,
+      "completionContainsGreet": true,
+      "signatureCount": 1
+    },
+    {
+      "case": "native-DOM",
+      "file": "sample.js",
+      "earlyText": "",
+      "englishOnce": true,
+      "chineseOnce": true,
+      "delayMs": 1500
+    },
+    {
+      "case": "chinese-only",
+      "file": "sample.js",
+      "originalProseRemoved": true
+    },
+    {
+      "case": "explicit-failure-fallback",
+      "file": "sample.js",
+      "originalOnce": true
+    },
+    {
+      "case": "no-automatic-fallback",
+      "file": "sample.js",
+      "returningUndefinedSuppressesOriginal": true
+    },
+    {
+      "case": "exclusive-paired",
+      "file": "sample.py",
+      "hoverCount": 1,
+      "selfCalls": 1,
+      "duplicateEnglish": false,
+      "externalSourceCount": 1,
+      "definitions": 1,
+      "completionContainsGreet": true,
+      "signatureCount": 1
+    },
+    {
+      "case": "native-DOM",
+      "file": "sample.py",
+      "earlyText": "",
+      "englishOnce": true,
+      "chineseOnce": true,
+      "delayMs": 1500
+    },
+    {
+      "case": "chinese-only",
+      "file": "sample.py",
+      "originalProseRemoved": true
+    },
+    {
+      "case": "explicit-failure-fallback",
+      "file": "sample.py",
+      "originalOnce": true
+    },
+    {
+      "case": "no-automatic-fallback",
+      "file": "sample.py",
+      "returningUndefinedSuppressesOriginal": true
+    },
+    {
+      "case": "concurrent-python-javascript",
+      "selfCalls": 2,
+      "bounded": true
+    },
+    {
+      "case": "third-party-normal-provider",
+      "aggregatedOnce": true
+    },
+    {
+      "case": "competing-exclusive",
+      "recursiveOmitsOtherExclusive": true,
+      "translationVisible": false,
+      "rivalVisible": true
+    },
+    {
+      "case": "decoration-hover",
+      "stillVisible": true
+    },
+    {
+      "case": "dispose-restores-native",
+      "file": "sample.js",
+      "restored": true
+    },
+    {
+      "case": "dispose-restores-native",
+      "file": "sample.py",
+      "restored": true
+    }
+  ]
+}
