@@ -43,7 +43,7 @@ export async function displayRegression(): Promise<void> {
     await until(() => current.paired, 'display event');
     assert.equal(resets, 0); assert.equal(current.revision, old.revision); assert.equal(old.paired, false); assert(!activeSignal!.aborted);
     release(); const oldResult = text(await pending);
-    assert(oldResult.includes('**中文说明**')); assert(!oldResult.includes('**原文：**'));
+    assert(oldResult.includes('中文 Description')); assert(!oldResult.includes('**中文说明**')); assert(!oldResult.includes('**原文：**'));
     assert(!oldResult.includes('function independent'));
     const next = text(await provider.provideHover(doc, position, token.token));
     assert(next.includes('**原文：**')); assert(next.includes('原文表格')); assert.equal(calls, 1);
@@ -62,7 +62,8 @@ export async function displayRegression(): Promise<void> {
         await vscode.commands.executeCommand('editor.action.showHover');
         let details = await hoverPresentation();
         for (let i = 0; i < 40 && (!details.width || !details.text.includes('原文表格')); i++) { await sleep(100); details = await hoverPresentation(); }
-        assert(details.text.includes('中文说明') && details.text.includes('原文表格'));
+        assert(details.text.includes('中文 Description') && details.text.includes('原文表格'));
+        assert(!details.text.includes('中文说明'));
         assert(details.headings.some(h => h.tag === 'H4' && h.text.includes('中文')));
         assert(details.tables >= 3); assert(details.quotes >= 1);
         assert(details.width > 0); assert(!details.dangerousLinks);
@@ -95,8 +96,8 @@ export async function richLanguageSamples(settings: Settings): Promise<void> {
       await vscode.window.showTextDocument(doc);
       const line = doc.lineCount - 2;
       let result = '';
-      for (let i = 0; i < 30; i++) { result = text(await provider.provideHover(doc, new vscode.Position(line, 2), token.token)); if (result.includes('中文说明')) break; await sleep(300); }
-      assert(result.includes('中文说明') && result.includes('**原文：**'), filename);
+      for (let i = 0; i < 30; i++) { result = text(await provider.provideHover(doc, new vscode.Position(line, 2), token.token)); if (result.includes('**原文：**')) break; await sleep(300); }
+      assert(!result.includes('**中文说明**') && result.includes('**原文：**'), filename);
       assert(result.includes('ValueError') || result.includes('TypeError'), `exception lost: ${filename}`);
       assert(result.includes('value'), `parameter lost: ${filename}`);
       console.log(`DISPLAY SOURCE PASS real ${filename} parameter/return/exception docs`);

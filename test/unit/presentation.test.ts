@@ -26,7 +26,7 @@ test('compact titles normalize independently, preserve content, and leave segmen
   assert(paired.includes('https://example.com')); assert(paired.includes('`value`'));
   assert.deepEqual(doc.segments, before);
   const framed = hoverMarkdown(compact, false);
-  assert(framed.startsWith('**中文说明**\n\n')); assert(!framed.includes('部分内容未翻译'));
+  assert.equal(framed, compact); assert(!framed.includes('部分内容未翻译'));
 });
 
 test('paired lists keep numbering and nesting, with Chinese before quoted original', () => {

@@ -54,5 +54,5 @@ export function renderMarkdown(root: Root, state: Presentation, paired: boolean)
 }
 
 export function hoverMarkdown(body: string, partial: boolean): string {
-  return `**中文说明**\n\n${partial ? '部分内容未翻译，已在对应位置标注。\n\n' : ''}${body}`;
+  return `${partial ? '部分内容未翻译，已在对应位置标注。\n\n' : ''}${body}`;
 }

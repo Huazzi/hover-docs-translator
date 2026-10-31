@@ -2,7 +2,7 @@
   "name": "hover-docs-translator",
   "displayName": "Hover Docs Translator",
   "description": "Translate Python and JavaScript hover documentation into Chinese using your cloud API.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "local-hover-docs",
   "private": true,
   "license": "MIT",
