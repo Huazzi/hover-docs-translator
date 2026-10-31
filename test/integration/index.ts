@@ -7,6 +7,7 @@ import { MemoryTranslationCache } from '../../src/cache/memoryTranslationCache.j
 import { readSettings, userSetting, type Settings } from '../../src/config/settingsService.js';
 import { hoverText } from './renderer.js';
 import { cancellationRegression } from './cancellation.js';
+import { displayRegression, richLanguageSamples } from './display.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export async function run(): Promise<void> {
@@ -79,4 +80,6 @@ export async function run(): Promise<void> {
     console.log('CONFIG PASS workspace cannot redirect user credentials');
   } finally { registered.dispose(); pool.reset(); }
   await cancellationRegression(settings);
+  await displayRegression();
+  await richLanguageSamples(settings);
 }

@@ -9,6 +9,7 @@ import { HoverDiscoveryCoordinator } from './hover/hoverDiscoveryCoordinator.js'
 import { createHoverProvider } from './hover/hoverDocumentProvider.js';
 import { Diagnostics } from './ui/diagnostics.js';
 import { registerCommands } from './ui/commands.js';
+import { applyConfigurationChange } from './config/settingsChange.js';
 export function activate(context: vscode.ExtensionContext): void {
   let revision = 0; let config: Settings | undefined;
   const diagnostics = new Diagnostics(); const credentials = new CredentialStore(context.secrets); const consent = new ConsentStore(context.globalState);
@@ -28,6 +29,8 @@ export function activate(context: vscode.ExtensionContext): void {
     return true;
   } });
   context.subscriptions.push(diagnostics, discovery, { dispose: () => translations.reset() }, vscode.languages.registerHoverProvider([{ language: 'python', scheme: 'file' }, { language: 'javascript', scheme: 'file' }], provider));
-  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => { if (event.affectsConfiguration(NAMESPACE)) refresh(); }), context.secrets.onDidChange(refresh), vscode.workspace.onDidGrantWorkspaceTrust(refresh));
+  context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(event => {
+    if (event.affectsConfiguration(NAMESPACE)) applyConfigurationChange(config, () => readSettings(revision), next => { config = next; }, refresh);
+  }), context.secrets.onDidChange(refresh), vscode.workspace.onDidGrantWorkspaceTrust(refresh));
   registerCommands(context, { settings, credentials, consent, invalidate: refresh, clearCache: () => translations.reset(undefined, false), diagnostics });
 }

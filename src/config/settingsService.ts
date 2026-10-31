@@ -11,11 +11,14 @@ export function userSetting<T>(name: string, fallback: T): T {
 function limit(name: string, fallback: number, min: number, max: number): number {
   const value = userSetting(name, fallback); return Number.isFinite(value) ? Math.round(Math.max(min, Math.min(max, value))) : fallback;
 }
+export function displayMode(): 'translationOnly' | 'paired' {
+  return userSetting<string>('displayMode', 'translationOnly') === 'paired' ? 'paired' : 'translationOnly';
+}
 export function readSettings(revision: number): Settings | undefined {
   const base = userSetting('apiBaseUrl', ''); const model = userSetting('model', '').trim();
   if (!base || !model) return undefined;
   return {
-    endpoint: normalizeEndpoint(base), model, revision, enabled: userSetting('enabled', true), paired: userSetting<string>('displayMode', 'translationOnly') === 'paired',
+    endpoint: normalizeEndpoint(base), model, revision, enabled: userSetting('enabled', true), paired: displayMode() === 'paired',
     maxChars: limit('maxChars', 6000, 100, 30000), discoveryTimeoutMs: limit('discoveryTimeoutMs', 5000, 100, 30000),
     timeoutMs: limit('requestTimeoutMs', 15000, 1000, 60000), concurrent: limit('maxConcurrentRequests', 2, 1, 4), queueSize: limit('maxQueueSize', 8, 0, 20), perMinute: limit('requestsPerMinute', 20, 1, 120),
     cacheEntries: limit('cacheMaxEntries', 500, 1, 2000), cacheTtlMs: limit('cacheTtlMinutes', 1440, 1, 10080) * 60000,

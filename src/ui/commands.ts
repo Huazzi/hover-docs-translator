@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { NAMESPACE, type Settings } from '../config/settingsService.js';
+import { NAMESPACE, displayMode, type Settings } from '../config/settingsService.js';
 import { normalizeEndpoint } from '../config/endpoint.js';
 import type { CredentialStore } from '../security/credentialStore.js';
 import type { ConsentStore } from '../security/consentStore.js';
@@ -36,13 +36,24 @@ export function registerCommands(context: vscode.ExtensionContext, deps: {
     grantConsent: grant,
     async revokeConsent() { await deps.consent.revokeAll(); deps.invalidate(); },
     async toggle() { await settings.update('enabled', !deps.settings()?.enabled, vscode.ConfigurationTarget.Global); },
-    async toggleDisplay() { await settings.update('displayMode', deps.settings()?.paired ? 'translationOnly' : 'paired', vscode.ConfigurationTarget.Global); },
+    async toggleDisplay() {
+      const current = displayMode();
+      const options = [
+        { label: '中文阅读', value: 'translationOnly', detail: '插件区以中文呈现；语言服务原文仍保留。' },
+        { label: '中英对照', value: 'paired', detail: '逐段先中文、后原文，适合核对术语。' },
+      ].map(option => ({ ...option, description: option.value === current ? '当前' : undefined }));
+      const choice = await vscode.window.showQuickPick(options, { title: '选择显示方式', placeHolder: '下一次悬停生效；复用有效的译文缓存' });
+      if (choice && choice.value !== displayMode()) {
+        await settings.update('displayMode', choice.value, vscode.ConfigurationTarget.Global);
+        void vscode.window.showInformationMessage(`已选择${choice.label}，下一次悬停生效。`);
+      }
+    },
     clearCache() { deps.clearCache(); },
     showDiagnostics() { deps.diagnostics.output.show(); },
     async menu() {
       const options = [
         ['配置接口、模型与密钥', 'configure'], ['设置 API Key', 'setApiKey'], ['确认云端发送', 'grantConsent'],
-        ['暂停/恢复自动翻译', 'toggle'], ['切换中英对照', 'toggleDisplay'], ['清空缓存', 'clearCache'],
+        ['暂停/恢复自动翻译', 'toggle'], [`显示方式 · ${displayMode() === 'paired' ? '中英对照' : '中文阅读'}`, 'toggleDisplay'], ['清空缓存', 'clearCache'],
         ['撤回云端发送同意', 'revokeConsent'], ['清除全部 API Key', 'clearApiKeys'], ['打开诊断日志', 'showDiagnostics'],
       ].map(([label, command]) => ({ label, command }));
       const choice = await vscode.window.showQuickPick(options, { title: 'Hover Docs Translator' });

@@ -1,18 +1,18 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
-import remarkStringify from 'remark-stringify';
 import type { Root, Nodes, PhrasingContent, Definition, Paragraph, Heading, TableCell } from 'mdast';
 import type { Segment, Translations } from '../translation/contracts.js';
 import { TranslationError } from '../translation/contracts.js';
+import { renderMarkdown } from './hoverMarkdownRenderer.js';
 
 const parser = unified().use(remarkParse).use(remarkGfm);
-const writer = unified().use(remarkGfm).use(remarkStringify);
 const markerPattern = /⟦HDT_[^⟧]*⟧/g;
 type Block = Paragraph | Heading | TableCell;
 type Part = { kind: 'leaf' | 'open'; node: PhrasingContent } | { kind: 'close' };
 interface Unit { segment: Segment; parts: Part[] }
 export interface ProtectedDocument { segments: Segment[]; render: (result: Translations, paired: boolean) => string; partial: boolean }
+export interface SourceFragment { value: string; sourceId: number; contentIndex: number }
 function english(text: string): boolean {
   const latin = (text.match(/[a-z]/gi) || []).length;
   const chinese = (text.match(/[\u3400-\u9fff]/g) || []).length;
@@ -87,11 +87,26 @@ function restore(unit: Unit, translated: string): PhrasingContent[] {
   if (stack.length !== 1) throw new TranslationError('invalid_translation');
   return result;
 }
-export function extractMarkdown(contents: string[], maxChars: number): ProtectedDocument | undefined {
+export function extractMarkdown(contents: (string | SourceFragment)[], maxChars: number): ProtectedDocument | undefined {
   const root: Root = { type: 'root', children: [] };
+  const fragments = new Map<string, { tree: Root; sources: SourceFragment[] }>();
+  const headingDepths = new Map<Nodes, Heading['depth']>();
   // Definitions belong to each source Markdown document, not the merged Hover.
-  for (const content of new Set(contents)) { const parsed = parser.parse(content); sanitize(parsed); root.children.push(...parsed.children); }
+  for (const content of contents) {
+    const value = typeof content === 'string' ? content : content.value;
+    const existing = fragments.get(value);
+    if (existing) { if (typeof content !== 'string') existing.sources.push(content); continue; }
+    const parsed = parser.parse(value); sanitize(parsed);
+    fragments.set(value, { tree: parsed, sources: typeof content === 'string' ? [] : [content] });
+    const headings: Heading[] = [];
+    function scan(node: Nodes): void { if (node.type === 'heading') headings.push(node); if ('children' in node) node.children.forEach(scan); }
+    scan(parsed);
+    const minDepth = Math.min(...headings.map(h => h.depth));
+    for (const h of headings) headingDepths.set(h, Math.min(6, 4 + h.depth - minDepth) as Heading['depth']);
+    root.children.push(...parsed.children);
+  }
   const units = new Map<Block, Unit>(); const segments: Segment[] = []; const seen = new Map<string, Segment>();
+  const budgetSkipped = new Set<Nodes>();
   let chars = 0; let partial = false; let exhausted = false;
   function walk(node: Nodes): void {
     if (node.type === 'paragraph' || node.type === 'heading' || node.type === 'tableCell') {
@@ -99,7 +114,7 @@ export function extractMarkdown(contents: string[], maxChars: number): Protected
       if (!english(text) || signatureOnly(text) || /(?:[A-Za-z]:\\|\/(?:home|Users|tmp)\/)/.test(text) || /⟦HDT_[^⟧]*⟧/.test(text)) return;
       const unit = protect(node, `s${segments.length}`); const previous = seen.get(unit.segment.text);
       const cost = previous ? 0 : unit.segment.text.length;
-      if (exhausted || chars + cost > maxChars) { partial = true; exhausted = true; return; }
+      if (exhausted || chars + cost > maxChars) { partial = true; exhausted = true; budgetSkipped.add(node); return; }
       if (previous) unit.segment = previous;
       else { segments.push(unit.segment); seen.set(unit.segment.text, unit.segment); chars += cost; }
       units.set(node, unit); return;
@@ -107,17 +122,21 @@ export function extractMarkdown(contents: string[], maxChars: number): Protected
     if ('children' in node) node.children.forEach(walk);
   }
   walk(root); if (!segments.length) return undefined;
+  const omitted = new Set<Nodes>();
+  const hasProse = (node: Nodes): boolean => units.has(node as Block) || budgetSkipped.has(node) || ('children' in node && node.children.some(hasProse));
+  const proseSources = new Set([...fragments.values()].filter(f => hasProse(f.tree)).flatMap(f => f.sources.map(s => s.sourceId)));
+  for (const { tree, sources } of fragments.values()) {
+    // A leading independent, single-line declaration with prose in the same Hover.
+    // Calls, bodies, classes, overloads and mixed blocks deliberately remain visible.
+    if (tree.children.length !== 1 || !sources.length || !sources.every(s => s.contentIndex === 0 && proseSources.has(s.sourceId))) continue;
+    const node = tree.children[0];
+    const text = node.type === 'code' ? node.value : node.type === 'paragraph' && node.children.every(c => c.type === 'text') ? prose(node) : '';
+    if (/^(?:(?:\(function\)|\(method\)|function)\s+[\w.$]+\([^\n{};]*\)\s*:\s*[^\n{};]+|(?:async\s+)?def\s+\w+\([^\n{};]*\)\s*(?:->\s*[^\n{};:]+)?\s*:?)$/.test(text.trim()) && !hasProse(node)) omitted.add(node);
+  }
   return { segments, partial, render(result, paired) {
-    const clone = structuredClone(root);
-    function apply(original: Nodes, target: Nodes): void {
-      if ((original.type === 'paragraph' || original.type === 'heading' || original.type === 'tableCell') && (target.type === 'paragraph' || target.type === 'heading' || target.type === 'tableCell')) {
-        const unit = units.get(original);
-        if (unit) { const translated = restore(unit, result[unit.segment.id]); target.children = paired ? [...target.children, { type: 'break' }, ...translated] : translated; }
-        return;
-      }
-      if ('children' in original && 'children' in target) original.children.forEach((child, i) => apply(child, target.children[i]));
-    }
-    apply(root, clone); return writer.stringify(clone);
+    const translated = new Map<Nodes, PhrasingContent[]>();
+    for (const [node, unit] of units) translated.set(node, restore(unit, result[unit.segment.id]));
+    return renderMarkdown(root, { translated, budgetSkipped, omitted, headingDepths }, paired);
   } };
 }
 

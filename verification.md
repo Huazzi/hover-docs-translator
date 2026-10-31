@@ -42,3 +42,17 @@
 - 界面验证使用 2 秒假传输；并非 10 秒延迟、所有 Pylance 版本、所有其他 Hover 扩展组合都已验证。
 - 原文采集期间并发新悬停可能本次只有英文，这是批准设计的已知边界；未声称消除该窗口。
 - WSL/SSH/Dev Container、Notebook/Web/JSX 不在首版支持范围。
+
+## 0.2.0 展示优化验证（2026-10-31）
+
+- 用户已报告0.1.0真实安装、配置 deepseek-flash 后能看到译文；这是用户验收反馈，不是自动化供应商矩阵。
+- `npm run typecheck`、30项单元测试、构建与VSIX打包通过。
+- 最终源码的真实 VS Code 集成通过，日志 `.vscode-test/integration-0.2.0.log`（忽略提交）。
+- 真实配置事件触发生产共用分发函数：进行中切显示方式不主动Abort、旧快照保持旧模式；下一次对照展示命中同一缓存，云请求计数为1。
+- 改变模型仍失效并取消旧任务。单元测试覆盖全部非展示字段的混合变更、读取失败、401阻断与429冷却不可被显示切换清除。
+- 原有文档修改/关闭 × 排队/执行四组回归继续通过。
+- 在 Default Light Modern / Default Dark Modern / Default High Contrast 下，实际可见Hover宽度约408px，DOM确认H4中文章节、完整分组表格、原文引用；保存三张原生Hover截图于 `.vscode-test/display-*.png`。
+- 新增真实 Pylance Google风格 docstring、JS JSDoc 样本，参数、返回值和异常说明均保留。单元覆盖嵌套列表、表格对齐、安全链接、模型注入、预算标记、代码与签名。
+- 首轮主题测试误读隐藏旧Hover，测试改为选择可见窗口并等待主题刷新；没有通过修改产品代码规避断言。
+- 尚未覆盖全部360/520/720px宽度、NumPy风格与所有第三方库组合；未在用户普通VS Code窗口中安装或修改配置，未发送付费云请求。
+- 独立审查记录见 `.planning/hover-display-v2/review.md`。

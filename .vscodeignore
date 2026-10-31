@@ -11,3 +11,4 @@ dist/test/**
 tsconfig.json
 package-lock.json
 .gitignore
+docs/**

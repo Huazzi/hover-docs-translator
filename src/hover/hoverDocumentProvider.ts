@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { HoverDiscoveryCoordinator } from './hoverDiscoveryCoordinator.js';
 import { extractMarkdown } from '../content/markdownCodec.js';
+import { hoverMarkdown } from '../content/hoverMarkdownRenderer.js';
 import type { Settings } from '../config/settingsService.js';
 import type { TranslationCoordinator } from '../translation/translationCoordinator.js';
 export interface ProviderDependencies {
@@ -31,15 +32,15 @@ export function createHoverProvider(deps: ProviderDependencies): vscode.HoverPro
       const collected = await deps.discovery.collect(() => vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', document.uri, position), controller.signal, config.discoveryTimeoutMs);
       if (collected.kind !== 'collected') { if (collected.kind === 'timeout') deps.onError('source_timeout'); return undefined; }
       if (!valid()) return undefined;
-      const contents = (collected.value || []).filter(hover => !hover.range || hover.range.contains(position)).flatMap(hover => hover.contents.flatMap(content => {
-        if (typeof content === 'string') return [content];
+      const contents = (collected.value || []).filter(hover => !hover.range || hover.range.contains(position)).flatMap((hover, sourceId) => hover.contents.flatMap((content, contentIndex) => {
+        if (typeof content === 'string') return [{ value: content, sourceId, contentIndex }];
         if ('language' in content) return []; // Legacy code MarkedString is never prose.
-        return [content.value];
+        return [{ value: content.value, sourceId, contentIndex }];
       }));
       const doc = extractMarkdown(contents, config.maxChars); if (!doc) return undefined;
       const value = await deps.translations.acquire(doc.segments, config, controller.signal);
       if (!valid()) return undefined;
-      const markdown = new vscode.MarkdownString(`### 中文翻译${doc.partial ? '（部分翻译）' : ''}\n\n${doc.render(value, config.paired)}`);
+      const markdown = new vscode.MarkdownString(hoverMarkdown(doc.render(value, config.paired), doc.partial));
       markdown.isTrusted = false; markdown.supportHtml = false;
       return new vscode.Hover(markdown, document.getWordRangeAtPosition(position) || new vscode.Range(position, position));
     } catch (error) {
