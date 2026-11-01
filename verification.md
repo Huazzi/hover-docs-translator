@@ -88,3 +88,27 @@
 - 三主题原生DOM确认没有额外原文标签/引用；受控样例表格为原语言服务1份+译文1份，不再第三次复制。Python/JS说明、缓存复用、取消和失败兜底回归通过。
 - 集成日志：`.vscode-test/stable-031-integration.log`、`.vscode-test/takeover-031-integration.log`。安装冒烟使用独立031目录和0.3.1版本断言。
 - 不修改用户常用VSCode配置，不调用真实云端API；保留旧版VSIX。
+
+## 本地 Notebook Python 悬停支持（2026-11-01，审查已确认）
+
+- 新增本地已保存 `.ipynb` / `jupyter-notebook` Python 代码单元格，覆盖稳定追加和实验接管。统一 selector 与运行时单元格归属校验；不放宽远程窗口、工作区信任、云端同意或密钥门禁。
+- macOS / VS Code 1.144.0，使用内置 `vscode.ipynb` 和已安装 Python/Pylance。无需额外链接 Jupyter，无需运行单元格、选择 kernel 或调用付费 API 即取得本次样例的同单元格及跨单元格文档。
+- `npm run typecheck`、36项单元测试、`npm run build` 通过。
+- `npm run test:integration` 通过：Notebook 单独打开激活、真实单元格 selector、Python code cell 归属、Markdown/非 Python/untitled 排除、真实 Pylance 原文、稳定译文、签名、缓存复用、显示切换、拒绝权限不发请求、翻译错误原文保留；现有 Python/JavaScript、三主题 DOM、设置和取消回归通过。
+- `npm run test:takeover` 通过：Notebook 真实递归原文和单份接管、中英对照/中文模式、缓存复用、权限/失败兜底；现有 Python/JavaScript 接管 UI 和生命周期回归通过。
+- Notebook 生命周期覆盖：稳定/接管的排队及执行中请求，在编辑/删除当前单元格或关闭 Notebook 标签时取消；接管超时后台任务同样取消。另一个单元格的文本/metadata 更新不会误取消当前请求。
+- 集成日志：`.vscode-test/notebook-stable.log`、`.vscode-test/notebook-takeover.log`。首次启动因 macOS 可执行文件名与预期不符失败，按实际安装修正为 `Contents/MacOS/Code` 后通过。隔离测试配置禁用扩展自动更新。
+- 未执行 Windows 安装冒烟、真实云端模型质量/延迟验收或跨 VS Code 版本测试；本轮没有生成或安装新 VSIX。远程、untitled、自定义 Notebook 及其他单元格语言不在本次支持范围。
+
+- 两位独立 OCR workspace 审查均为 No findings，各覆盖8/8代码文件，排除9项文档/规划/fixture路径，详见 `.planning/notebook-python-hover/review.md`。Notebook 本次为真实文档/provider API 全流程验证，未新增 Notebook 可见悬浮 UI 的 DOM/截图断言。用户已于2026-11-01接受审查结果及验证边界并批准最终收尾。
+
+## 0.4.0 Java / TypeScript 与 Notebook 合并发布（2026-11-01）
+
+- 在共享 file 语言范围及激活事件中加入 Java、TypeScript；保留已批准的 Python Notebook 支持。云端确认文案同步范围，接口、密钥、同意、缓存和请求生命周期沿用既有机制，无新增依赖。
+- macOS / VS Code 1.144.0，真实 TypeScript 内置语言服务与 Red Hat Java 1.58.0（扩展自带 JRE 25.0.4.1）。不修改系统 JDK，不运行样例程序或 Notebook kernel，不调用用户真实云端 API。
+- 类型检查、36项单元测试和构建通过；完整稳定/实验接管集成均通过。新增验证真实泛型 TypeScript 与 Java Javadoc 原文、实际 fenced 签名保留、受控中文译文、缓存/显示切换、权限拒绝与翻译失败保留原文，以及 TSX/JSX、Java Notebook 排除。
+- Java 的 `@throws` 异常类型实际携带 `command:java.open.file` 链接。稳定模式翻译净化后的说明；实验模式保留含该链接的完整原文分片。另一个无此标记的参数/返回说明在实验模式正常翻译；没有放宽信任或 URL 白名单，也没有为测试删除复杂样例。
+- Python/JavaScript 原有三主题可见 DOM、取消、设置及实验接管回归通过；Notebook 同单元格/跨单元格 Pylance、缓存、权限/失败兜底与15项排队/执行/后台取消场景通过。新增语言的测试为真实文档/provider API 全流程，没有新增其可见 Hover DOM/截图断言。
+- 日志：`.vscode-test/release040-stable.log`、`.vscode-test/release040-takeover.log`。原文结构证据为 `.vscode-test/language-{java,typescript}-{false,true}.json`。首次 Java 测试因隔离扩展注册表未发现新链接失败，改为按版本暂存依赖后取得真实来源；签名断言改为比对真实 fenced 签名而非假定未限定类名的格式。
+- 0.4.0 打包沿用自用 Proposed API VSIX。安装冒烟脚本从 manifest 读取版本、在 Windows/macOS 独立目录安装实际包，以 Production 模式和受控原文检查版本、激活、Java/TS 注册及提案门禁；它不代表真实 Java 语言服务或云端质量验收。产物审计、安装结果和 SHA256 记录在本次发布计划的 progress/review 中。
+- 本机重新验证不覆盖 Windows、跨 VS Code 版本、真实云端翻译质量/延迟；TSX/JSX、jdt 虚拟源码、Java Notebook、远程及未保存 Notebook 不在本次支持范围。

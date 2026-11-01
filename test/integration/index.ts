@@ -9,9 +9,13 @@ import { hoverText } from './renderer.js';
 import { cancellationRegression } from './cancellation.js';
 import { displayRegression, richLanguageSamples } from './display.js';
 import { registrationSmoke } from './takeover.js';
+import { notebookRegression } from './notebook.js';
+import { languageRegression } from './languages.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export async function run(): Promise<void> {
+  await notebookRegression(false);
+  await languageRegression(false);
   await vscode.extensions.getExtension('local-hover-docs.hover-docs-translator')?.activate();
   const gate = new HoverDiscoveryCoordinator(); let captured: vscode.Hover[] = []; let calls = 0;
   const provider = vscode.languages.registerHoverProvider(['javascript', 'python'], {

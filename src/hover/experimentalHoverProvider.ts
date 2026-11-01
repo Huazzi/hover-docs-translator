@@ -3,6 +3,7 @@ import type { ProviderDependencies } from './hoverDocumentProvider.js';
 import { prepareTakeover } from '../content/takeoverHoverContent.js';
 import { RecursiveHoverReader } from './recursiveHoverReader.js';
 import { waitFor } from './asyncWait.js';
+import { resolveHoverDocument, notebookContains } from './hoverDocumentScope.js';
 
 export const RECURSIVE_HOVER_COMMAND = 'vscode.experimental.executeHoverProvider_recursive';
 type Dependencies = Omit<ProviderDependencies, 'discovery'> & {
@@ -14,17 +15,23 @@ type Dependencies = Omit<ProviderDependencies, 'discovery'> & {
 /** Separate from the append provider: once exclusive, collected originals are our responsibility. */
 export class ExperimentalHoverProvider implements vscode.HoverProvider, vscode.Disposable {
   private reader = new RecursiveHoverReader<vscode.Hover[]>();
-  private active = new Map<AbortController, string>();
+  private active = new Map<AbortController, { documentUri: string; notebookUri?: string }>();
   private translating = 0;
   private disposed = false;
   private listeners: vscode.Disposable[];
   constructor(private deps: Dependencies) {
-    const cancel = (uri: vscode.Uri) => { for (const [controller, key] of this.active) if (key === uri.toString()) controller.abort(); };
+    const cancel = (uri: vscode.Uri) => { for (const [controller, key] of this.active) if (key.documentUri === uri.toString()) controller.abort(); };
+    const cancelNotebook = (uri: vscode.Uri) => { for (const [controller, key] of this.active) if (key.notebookUri === uri.toString()) controller.abort(); };
     this.listeners = [
       vscode.workspace.onDidChangeTextDocument(event => cancel(event.document.uri)),
       vscode.workspace.onDidCloseTextDocument(document => cancel(document.uri)),
+      vscode.workspace.onDidCloseNotebookDocument(notebook => cancelNotebook(notebook.uri)),
+      vscode.workspace.onDidChangeNotebookDocument(event => {
+        for (const change of event.contentChanges) for (const cell of change.removedCells) cancel(cell.document.uri);
+      }),
       vscode.window.tabGroups.onDidChangeTabs(event => {
         for (const tab of event.closed) if (tab.input instanceof vscode.TabInputText) cancel(tab.input.uri);
+        for (const tab of event.closed) if (tab.input instanceof vscode.TabInputNotebook) cancelNotebook(tab.input.uri);
       }),
     ];
   }
@@ -32,10 +39,11 @@ export class ExperimentalHoverProvider implements vscode.HoverProvider, vscode.D
   dispose(): void { this.disposed = true; this.cancelPending(); this.reader.dispose(); this.listeners.forEach(listener => listener.dispose()); }
   async provideHover(document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken): Promise<vscode.Hover | undefined> {
     if (this.disposed || token.isCancellationRequested) return undefined;
+    const scope = resolveHoverDocument(document); if (!scope) return undefined;
     const config = this.deps.settings(); const version = document.version;
-    const controller = new AbortController(); this.active.set(controller, document.uri.toString());
+    const controller = new AbortController(); this.active.set(controller, { documentUri: document.uri.toString(), notebookUri: scope.notebook?.uri.toString() });
     const subscription = token.onCancellationRequested(() => controller.abort());
-    const valid = () => !this.disposed && !controller.signal.aborted && !document.isClosed && document.version === version && this.deps.settings()?.revision === config?.revision;
+    const valid = () => !this.disposed && !controller.signal.aborted && !document.isClosed && notebookContains(scope, document) && document.version === version && this.deps.settings()?.revision === config?.revision;
     const cleanup = () => { subscription.dispose(); this.active.delete(controller); };
     let background = false;
     try {

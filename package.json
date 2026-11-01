@@ -1,8 +1,8 @@
 {
   "name": "hover-docs-translator",
   "displayName": "悬浮翻译 · Hover Docs Translator",
-  "description": "Translate Python and JavaScript hover documentation into Chinese using your cloud API.",
-  "version": "0.3.1",
+  "description": "Translate Python, JavaScript, Java and TypeScript hover documentation into Chinese using your cloud API.",
+  "version": "0.4.0",
   "publisher": "local-hover-docs",
   "private": true,
   "license": "MIT",
@@ -14,7 +14,9 @@
   ],
   "activationEvents": [
     "onLanguage:python",
-    "onLanguage:javascript"
+    "onLanguage:javascript",
+    "onLanguage:java",
+    "onLanguage:typescript"
   ],
   "main": "./dist/extension.cjs",
   "extensionKind": [

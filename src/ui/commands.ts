@@ -14,7 +14,7 @@ export function registerCommands(context: vscode.ExtensionContext, deps: {
   async function grant(): Promise<void> {
     const config = deps.settings(); if (!config) { void vscode.window.showInformationMessage('请先配置 API 根路径和模型。'); return; }
     if (vscode.env.remoteName || !vscode.workspace.isTrusted) { void vscode.window.showInformationMessage('首版仅在受信任的本地桌面工作区启用云端翻译。'); return; }
-    const answer = await vscode.window.showInformationMessage(`将 Python/JavaScript 的悬停说明发送到：\n${config.endpoint}\n\n内容可能来自你的私有项目。仅发送文档说明；不发送完整文件。API 服务可能产生费用。`, { modal: true }, '同意云端发送');
+    const answer = await vscode.window.showInformationMessage(`将 Python、JavaScript、Java、TypeScript 的悬停说明（含 Python Notebook 代码单元格）发送到：\n${config.endpoint}\n\n内容可能来自你的私有项目。仅发送文档说明；不发送完整文件。API 服务可能产生费用。`, { modal: true }, '同意云端发送');
     if (answer === '同意云端发送') { await deps.consent.grant(config.endpoint); deps.invalidate(); }
   }
   async function key(): Promise<void> {

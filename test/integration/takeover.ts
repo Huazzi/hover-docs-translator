@@ -7,6 +7,9 @@ import { TranslationError, type Segment } from '../../src/translation/contracts.
 import type { Settings } from '../../src/config/settingsService.js';
 import { prepareTakeover } from '../../src/content/takeoverHoverContent.js';
 import { hoverText, captureVisibleHover } from './renderer.js';
+import { notebookRegression } from './notebook.js';
+import { hoverSelectors } from '../../src/hover/hoverDocumentScope.js';
+import { languageRegression } from './languages.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function until(test: () => boolean, label: string) { for (let i = 0; i < 100; i++) { if (test()) return; await sleep(20); } throw new Error(label); }
@@ -121,6 +124,8 @@ async function lifecycle(document: vscode.TextDocument): Promise<void> {
 }
 
 export async function run(): Promise<void> {
+  await notebookRegression(true);
+  await languageRegression(true);
   await vscode.extensions.getExtension('local-hover-docs.hover-docs-translator')?.activate();
   await registrationSmoke(true);
   const documents: vscode.TextDocument[] = [];
@@ -135,7 +140,7 @@ export async function run(): Promise<void> {
   let current = settings; let calls = 0;
   const pool = new TranslationCoordinator(async segments => { calls++; await sleep(40); return translate(segments); }, new MemoryTranslationCache());
   const provider = new ExperimentalHoverProvider({ translations: pool, settings: () => current, permitted: async () => true, onError: code => assert.fail(code), waitMs: () => 1000, sourceFailed: () => assert.fail('recursive source') });
-  const registration = vscode.languages.registerHoverProvider(['javascript', 'python'].map(language => ({ language, scheme: 'file', exclusive: true })), provider);
+  const registration = vscode.languages.registerHoverProvider(hoverSelectors(true), provider);
   try {
     const results = await Promise.all(documents.map((doc, index) => vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', doc.uri, new vscode.Position(index ? 6 : 3, 1))));
     results.forEach((hovers, index) => {

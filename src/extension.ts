@@ -12,6 +12,7 @@ import { registerCommands } from './ui/commands.js';
 import { applyConfigurationChange } from './config/settingsChange.js';
 import { HoverModeController } from './hover/hoverModeController.js';
 import { ExperimentalHoverProvider } from './hover/experimentalHoverProvider.js';
+import { hoverSelectors } from './hover/hoverDocumentScope.js';
 export function activate(context: vscode.ExtensionContext): void {
   let revision = 0; let config: Settings | undefined;
   let modes: HoverModeController<vscode.HoverProvider> | undefined;
@@ -45,8 +46,7 @@ export function activate(context: vscode.ExtensionContext): void {
     },
     register(provider, exclusive) {
       // Runtime registration is the capability gate. Do not claim proposal support from the manifest.
-      const selectors = ['python', 'javascript'].map(language => exclusive ? { language, scheme: 'file', exclusive: true } : { language, scheme: 'file' });
-      return vscode.languages.registerHoverProvider(selectors, provider);
+      return vscode.languages.registerHoverProvider(hoverSelectors(exclusive), provider);
     },
     report: state => diagnostics.mode(state),
   });

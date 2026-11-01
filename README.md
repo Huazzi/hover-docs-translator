@@ -1,16 +1,20 @@
 # 悬浮翻译 · Hover Docs Translator
 
-在 VS Code 的 Python、JavaScript 悬停说明中显示简体中文。使用你配置的 OpenAI 兼容云端 API，不要求本地模型。默认稳定模式追加译文；0.3.0 新增可选的实验性悬停接管，减少原文重复。
+在 VS Code 的 Python、JavaScript、Java、TypeScript 悬停说明中显示简体中文，也支持本地 `.ipynb` 的 Python 代码单元格。使用你配置的 OpenAI 兼容云端 API，不要求本地模型。默认稳定模式追加译文，也可选择实验性悬停接管，减少原文重复。0.4.0 将新增语言与 Notebook 支持一并打包。
 
 ## 安装与配置
 
-首版基线为 Windows 本地 VS Code 1.144.0 或更新版本，Python 使用 Microsoft Python + Pylance，JavaScript 使用内置 JS/TS 服务。请选择正确的 Python 解释器，并确保原悬停窗口确实有文档。
+使用本地桌面 VS Code 1.144.0 或更新版本。Python 使用 Microsoft Python + Pylance；JavaScript/TypeScript 使用内置 JS/TS 服务；Java 需要 Red Hat 的 Language Support for Java，并等待语言服务就绪。请选择相应项目解释器或 JDK，并确保原悬停窗口确实有文档。
 
-1. 扩展面板菜单选择 **从 VSIX 安装**，加载本项目生成的 `hover-docs-translator-0.3.1.vsix`。
+1. 扩展面板菜单选择 **从 VSIX 安装**，加载本项目生成的 `hover-docs-translator-0.4.0.vsix`。
 2. 命令面板运行 **悬浮翻译：配置接口、模型与密钥**。从旧版升级时通常无需重新配置。
 3. 填写供应商的 HTTPS API 根路径（如其文档要求 `/v1`，请保留），程序只追加 `/chat/completions`。向导会展示最终地址；不要输入完整 `/chat/completions` URL。
 4. 填写供应商模型名和 API Key，确认将文档说明发送到该接口。
-5. 在 `.py`、`.js` 中悬停函数、类或方法。原文先出现，译文稍后加入同一悬停窗口，直接显示正文，不再附加“中文说明”标题。最终排列顺序由 VS Code 决定。
+5. 在 `.py`、`.js`、`.java`、`.ts` 或本地已保存 `.ipynb` 的 Python 代码单元格中悬停函数、类或方法。原文先出现，译文稍后加入同一悬停窗口，直接显示正文，不再附加“中文说明”标题。最终排列顺序由 VS Code 决定。
+
+Notebook 支持稳定追加和实验接管，沿用现有接口、密钥和云端同意。使用 VS Code 的 Jupyter Notebook 编辑器，并确保 Python/Pylance 已提供原生悬停说明；翻译本身不要求执行单元格。仅处理 Python 代码单元格的文档说明，不翻译 Markdown 单元格、输出或整个 Notebook 文件。编辑或删除当前单元格、关闭 Notebook 标签时会取消相关请求。未保存的新建 Notebook、远程 Notebook 和其他 Notebook 类型暂不支持。
+
+Java/TypeScript 同样支持两种悬停模式。在本地 `.java` 中悬停 JDK/JAR API 可以翻译语言服务提供的文档；跳转进入 `jdt:` 虚拟库源码后的悬停暂不支持。带命令链接、可见 HTML 等无法安全重建的 Javadoc 分片，实验接管保留原文。TSX/JSX 和 Java Notebook 暂不支持。
 
 ## 可选：实验性悬停接管（0.3.0）
 
@@ -41,7 +45,7 @@
 - 超出字符预算的内容会在相应段落或表格处注明并保留原文。
 - 仅省略可可靠识别且与说明分开的重复签名；复杂或不确定的签名、示例继续保留。
 
-安装0.3.1后，按 VS Code 提示重载窗口即可使用。保留现有 API Key、接口、模型、云端同意、悬停模式和显示模式。
+安装0.4.0后，按 VS Code 提示重载窗口即可使用。保留现有 API Key、接口、模型、云端同意、悬停模式和显示模式。
 
 API Key 保存在 VS Code SecretStorage，不写入 `settings.json`。更换接口后需重新绑定密钥并确认云端发送。点击状态栏“悬浮翻译”可暂停、切换显示、清缓存、撤回同意、清除密钥或查看诊断。
 
@@ -57,7 +61,7 @@ API Key 保存在 VS Code SecretStorage，不写入 `settings.json`。更换接�
 
 - 稳定模式不能移除语言服务英文；实验接管可以重建单份语言文档，但有上述兼容与保真边界。
 - 采集现有说明期间，新悬停可能本次只有原文；重新悬停可重试。语言服务一直不返回时插件进入采集降级，原 Hover 和正常编辑不受阻。
-- 不支持首版范围外的远程窗口、Web、Notebook、JSX、自动补全或参数提示。
+- 不支持远程窗口、Web、TSX/JSX、Java 虚拟源码、自动补全或参数提示；Notebook 仅支持本地已保存 `.ipynb` 的 Python 代码单元格。
 - 纯代码、没有说明、无法安全拆分的签名保留原文。译文可能存在语义误差，请对照原文。
 - 401/403/404、协议不兼容会暂停当前配置的新自动请求；更新配置或密钥恢复。429 会冷却，不做无限重试。
 - HTTP 取消不保证云端停止计算或免除费用。接口需支持 Chat Completions 的 Bearer 鉴权和普通文本 JSON 响应；不依赖工具调用或结构化输出 API。
@@ -75,7 +79,7 @@ npm run package
 npm run test:installed
 ```
 
-集成测试使用隔离的用户数据与扩展目录，默认使用 `D:\DevTools\VSCode\Code.exe`；其他位置可通过 `VSCODE_EXECUTABLE` 指定。测试目录中仅链接本机已安装的 Python/Pylance 相关扩展，不修改原安装和配置。真实语言服务测试需要本机已有 Python + Pylance；未安装时应先安装依赖。云端测试使用假传输，不需要真实密钥或付费请求。
+集成测试使用隔离的用户数据与扩展目录，Windows 默认使用 `D:\DevTools\VSCode\Code.exe`，macOS 默认使用 `/Applications/Visual Studio Code.app/Contents/MacOS/Code`；其他位置可通过 `VSCODE_EXECUTABLE` 指定。测试目录按版本链接本机已安装的 Python/Pylance 与 Red Hat Java 扩展，并在隔离配置中禁用扩展自动更新。真实语言服务测试需要这些扩展可正常启动；Notebook 测试使用 VS Code 内置的 `.ipynb` 支持，验证同单元格和跨单元格说明，不执行代码。云端测试使用假传输，不需要真实密钥或付费请求。`test:installed` 在 Windows/macOS 的隔离目录安装实际 VSIX，验证版本、注册及实验模式门禁；该冒烟使用受控原文，不代表真实云端翻译质量验收。
 
 ## 设计与来源
 

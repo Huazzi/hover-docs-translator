@@ -4,6 +4,7 @@ import { extractMarkdown } from '../content/markdownCodec.js';
 import { hoverMarkdown } from '../content/hoverMarkdownRenderer.js';
 import type { Settings } from '../config/settingsService.js';
 import type { TranslationCoordinator } from '../translation/translationCoordinator.js';
+import { resolveHoverDocument, notebookContains } from './hoverDocumentScope.js';
 export interface ProviderDependencies {
   discovery: HoverDiscoveryCoordinator;
   translations: TranslationCoordinator;
@@ -16,7 +17,8 @@ export function createHoverProvider(deps: ProviderDependencies): vscode.HoverPro
   return { async provideHover(document, position, token) {
     if (deps.discovery.busy || deps.lifetime?.aborted) return undefined;
     const config = deps.settings();
-    if (!config?.enabled || token.isCancellationRequested || document.uri.scheme !== 'file' || !['python', 'javascript'].includes(document.languageId)) return undefined;
+    const scope = resolveHoverDocument(document);
+    if (!config?.enabled || token.isCancellationRequested || !scope) return undefined;
     const controller = new AbortController();
     const subscription = token.onCancellationRequested(() => controller.abort());
     const dispose = () => controller.abort();
@@ -24,12 +26,17 @@ export function createHoverProvider(deps: ProviderDependencies): vscode.HoverPro
     const sameDocument = (changed: vscode.TextDocument) => changed.uri.toString() === document.uri.toString();
     const changed = vscode.workspace.onDidChangeTextDocument(event => { if (sameDocument(event.document)) controller.abort(); });
     const closed = vscode.workspace.onDidCloseTextDocument(doc => { if (sameDocument(doc)) controller.abort(); });
+    const notebookClosed = vscode.workspace.onDidCloseNotebookDocument(notebook => { if (notebook === scope.notebook) controller.abort(); });
+    const notebookChanged = vscode.workspace.onDidChangeNotebookDocument(event => {
+      if (event.notebook === scope.notebook && event.contentChanges.some(change => change.removedCells.some(cell => sameDocument(cell.document)))) controller.abort();
+    });
     // Closing a tab does not always immediately unload its TextDocument model.
     const tabs = vscode.window.tabGroups.onDidChangeTabs(event => {
       if (event.closed.some(tab => tab.input instanceof vscode.TabInputText && tab.input.uri.toString() === document.uri.toString())) controller.abort();
+      if (scope.notebook && event.closed.some(tab => tab.input instanceof vscode.TabInputNotebook && tab.input.uri.toString() === scope.notebook!.uri.toString())) controller.abort();
     });
     const version = document.version;
-    const valid = () => !controller.signal.aborted && !document.isClosed && document.version === version && deps.settings()?.revision === config.revision;
+    const valid = () => !controller.signal.aborted && !document.isClosed && notebookContains(scope, document) && document.version === version && deps.settings()?.revision === config.revision;
     try {
       if (!await deps.permitted(config) || !valid()) return undefined;
       const collected = await deps.discovery.collect(() => vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', document.uri, position), controller.signal, config.discoveryTimeoutMs);
@@ -50,6 +57,6 @@ export function createHoverProvider(deps: ProviderDependencies): vscode.HoverPro
       const code = error && typeof error === 'object' && 'code' in error && typeof error.code === 'string' ? error.code : 'translation_failed';
       if (code !== 'cancelled') deps.onError(code);
       return undefined;
-    } finally { subscription.dispose(); deps.lifetime?.removeEventListener('abort', dispose); changed.dispose(); closed.dispose(); tabs.dispose(); }
+    } finally { subscription.dispose(); deps.lifetime?.removeEventListener('abort', dispose); changed.dispose(); closed.dispose(); notebookClosed.dispose(); notebookChanged.dispose(); tabs.dispose(); }
   } };
 }
