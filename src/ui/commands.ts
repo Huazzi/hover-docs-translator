@@ -77,7 +77,7 @@ export function registerCommands(context: vscode.ExtensionContext, deps: {
         ['暂停/恢复自动翻译', 'toggle'], [`悬停模式 · ${deps.modeState().effective === 'experimentalTakeover' ? '实验接管' : '稳定'}${deps.modeState().reason ? '（已回退）' : ''}`, 'selectHoverMode'], [`显示方式 · ${displayMode() === 'paired' ? '中英对照' : '中文阅读'}`, 'toggleDisplay'], ['清空缓存', 'clearCache'],
         ['撤回云端发送同意', 'revokeConsent'], ['清除全部 API Key', 'clearApiKeys'], ['打开诊断日志', 'showDiagnostics'],
       ].map(([label, command]) => ({ label, command }));
-      const choice = await vscode.window.showQuickPick(options, { title: 'Hover Docs Translator' });
+      const choice = await vscode.window.showQuickPick(options, { title: '悬浮翻译' });
       if (choice) await vscode.commands.executeCommand(`${NAMESPACE}.${choice.command}`);
     },
   };

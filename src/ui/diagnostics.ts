@@ -9,7 +9,7 @@ const messages: Record<string, string> = {
   takeover_source_failed: '实验原文采集失败，已回退稳定模式；请重新悬停',
 };
 export class Diagnostics implements vscode.Disposable {
-  readonly output = vscode.window.createOutputChannel('Hover Docs Translator');
+  readonly output = vscode.window.createOutputChannel('悬浮翻译');
   private status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 20);
   private activity = 0;
   private message = '配置翻译';
@@ -28,6 +28,6 @@ export class Diagnostics implements vscode.Disposable {
     this.output.appendLine(`${new Date().toISOString()} ${safe}`);
     this.state(messages[safe] || `翻译状态：${safe}`);
   }
-  private refresh(): void { this.status.text = this.activity ? `$(sync~spin) 中文文档 ${this.activity}` : '$(globe) 中文文档'; this.status.tooltip = `${this.modeMessage}\n${this.message}`; }
+  private refresh(): void { this.status.text = this.activity ? `$(sync~spin) 悬浮翻译 ${this.activity}` : '$(globe) 悬浮翻译'; this.status.tooltip = `${this.modeMessage}\n${this.message}`; }
   dispose(): void { this.output.dispose(); this.status.dispose(); }
 }

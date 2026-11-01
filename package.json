@@ -1,6 +1,6 @@
 {
   "name": "hover-docs-translator",
-  "displayName": "Hover Docs Translator",
+  "displayName": "悬浮翻译 · Hover Docs Translator",
   "description": "Translate Python and JavaScript hover documentation into Chinese using your cloud API.",
   "version": "0.3.1",
   "publisher": "local-hover-docs",
@@ -42,51 +42,51 @@
     "commands": [
       {
         "command": "hoverDocsTranslator.menu",
-        "title": "中文文档：打开菜单"
+        "title": "悬浮翻译：打开菜单"
       },
       {
         "command": "hoverDocsTranslator.configure",
-        "title": "中文文档：配置接口、模型与密钥"
+        "title": "悬浮翻译：配置接口、模型与密钥"
       },
       {
         "command": "hoverDocsTranslator.setApiKey",
-        "title": "中文文档：设置 API Key"
+        "title": "悬浮翻译：设置 API Key"
       },
       {
         "command": "hoverDocsTranslator.clearApiKeys",
-        "title": "中文文档：清除全部 API Key"
+        "title": "悬浮翻译：清除全部 API Key"
       },
       {
         "command": "hoverDocsTranslator.grantConsent",
-        "title": "中文文档：确认云端发送"
+        "title": "悬浮翻译：确认云端发送"
       },
       {
         "command": "hoverDocsTranslator.revokeConsent",
-        "title": "中文文档：撤回云端发送同意"
+        "title": "悬浮翻译：撤回云端发送同意"
       },
       {
         "command": "hoverDocsTranslator.toggle",
-        "title": "中文文档：暂停/恢复自动翻译"
+        "title": "悬浮翻译：暂停/恢复自动翻译"
       },
       {
         "command": "hoverDocsTranslator.toggleDisplay",
-        "title": "中文文档：选择显示方式"
+        "title": "悬浮翻译：选择显示方式"
       },
       {
         "command": "hoverDocsTranslator.clearCache",
-        "title": "中文文档：清空缓存"
+        "title": "悬浮翻译：清空缓存"
       },
       {
         "command": "hoverDocsTranslator.showDiagnostics",
-        "title": "中文文档：打开诊断日志"
+        "title": "悬浮翻译：打开诊断日志"
       },
       {
         "command": "hoverDocsTranslator.selectHoverMode",
-        "title": "中文文档：选择悬停模式"
+        "title": "悬浮翻译：选择悬停模式"
       }
     ],
     "configuration": {
-      "title": "Hover Docs Translator",
+      "title": "悬浮翻译 · Hover Docs Translator",
       "properties": {
         "hoverDocsTranslator.enabled": {
           "type": "boolean",
