@@ -11,7 +11,10 @@ const markerPattern = /⟦HDT_[^⟧]*⟧/g;
 type Block = Paragraph | Heading | TableCell;
 type Part = { kind: 'leaf' | 'open'; node: PhrasingContent } | { kind: 'close' };
 interface Unit { segment: Segment; parts: Part[] }
-export interface ProtectedDocument { segments: Segment[]; render: (result: Translations, paired: boolean) => string; partial: boolean }
+export interface ProtectedDocument {
+  segments: Segment[]; render: (result: Translations, paired: boolean) => string; partial: boolean;
+  renderFragments: (result: Translations, paired: boolean) => (string | undefined)[];
+}
 export interface SourceFragment { value: string; sourceId: number; contentIndex: number }
 function english(text: string): boolean {
   const latin = (text.match(/[a-z]/gi) || []).length;
@@ -87,7 +90,26 @@ function restore(unit: Unit, translated: string): PhrasingContent[] {
   if (stack.length !== 1) throw new TranslationError('invalid_translation');
   return result;
 }
-export function extractMarkdown(contents: (string | SourceFragment)[], maxChars: number): ProtectedDocument | undefined {
+/** Conservative takeover eligibility: don't discard source-only interactive/media semantics. */
+export function canRebuildMarkdown(value: string): boolean {
+  const tree = parser.parse(value);
+  const definitions = new Map<string, Definition>();
+  function definitionsIn(node: Nodes): void {
+    if (node.type === 'definition') definitions.set(referenceId(node.identifier), node);
+    if ('children' in node) node.children.forEach(definitionsIn);
+  }
+  definitionsIn(tree);
+  function safe(node: Nodes): boolean {
+    // Pylance appends an invisible moduleHash comment to ordinary docstrings.
+    if (node.type === 'html') return /^<!--(?:(?!-->)[\s\S])*-->$/.test(node.value.trim());
+    if (['image', 'imageReference'].includes(node.type)) return false;
+    if ((node.type === 'link' || node.type === 'definition') && !safeUrl(node.url)) return false;
+    if (node.type === 'linkReference' && !definitions.has(referenceId(node.identifier))) return false;
+    return !('children' in node) || node.children.every(safe);
+  }
+  return safe(tree);
+}
+export function extractMarkdown(contents: (string | SourceFragment)[], maxChars: number, takeover = false): ProtectedDocument | undefined {
   const root: Root = { type: 'root', children: [] };
   const fragments = new Map<string, { tree: Root; sources: SourceFragment[] }>();
   const headingDepths = new Map<Nodes, Heading['depth']>();
@@ -133,10 +155,19 @@ export function extractMarkdown(contents: (string | SourceFragment)[], maxChars:
     const text = node.type === 'code' ? node.value : node.type === 'paragraph' && node.children.every(c => c.type === 'text') ? prose(node) : '';
     if (/^(?:(?:\(function\)|\(method\)|function)\s+[\w.$]+\([^\n{};]*\)\s*:\s*[^\n{};]+|(?:async\s+)?def\s+\w+\([^\n{};]*\)\s*(?:->\s*[^\n{};:]+)?\s*:?)$/.test(text.trim()) && !hasProse(node)) omitted.add(node);
   }
-  return { segments, partial, render(result, paired) {
+  function presentation(result: Translations) {
     const translated = new Map<Nodes, PhrasingContent[]>();
     for (const [node, unit] of units) translated.set(node, restore(unit, result[unit.segment.id]));
-    return renderMarkdown(root, { translated, budgetSkipped, omitted, headingDepths }, paired);
+    return { translated, budgetSkipped, omitted: takeover ? new Set<Nodes>() : omitted, headingDepths };
+  }
+  return { segments, partial, render(result, paired) {
+    return renderMarkdown(root, presentation(result), paired, takeover);
+  }, renderFragments(result, paired) {
+    const state = presentation(result);
+    return contents.map(content => {
+      const tree = fragments.get(typeof content === 'string' ? content : content.value)!.tree;
+      return hasProse(tree) ? renderMarkdown(tree, state, paired, takeover) : undefined;
+    });
   } };
 }
 

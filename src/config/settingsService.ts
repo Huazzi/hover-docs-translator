@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { normalizeEndpoint } from './endpoint.js';
 import type { ServiceConfig } from '../translation/contracts.js';
+import type { HoverMode } from '../hover/hoverModeController.js';
 export const NAMESPACE = 'hoverDocsTranslator';
 export interface Settings extends ServiceConfig { enabled: boolean; maxChars: number; discoveryTimeoutMs: number; paired: boolean; cacheEntries: number; cacheTtlMs: number }
 /** Read only explicit user configuration and manifest defaults; ignore workspace overrides. */
@@ -14,6 +15,10 @@ function limit(name: string, fallback: number, min: number, max: number): number
 export function displayMode(): 'translationOnly' | 'paired' {
   return userSetting<string>('displayMode', 'translationOnly') === 'paired' ? 'paired' : 'translationOnly';
 }
+export function hoverMode(): HoverMode {
+  return userSetting<string>('hoverMode', 'stable') === 'experimentalTakeover' ? 'experimentalTakeover' : 'stable';
+}
+export function takeoverWaitMs(): number { return limit('takeoverWaitMs', 2500, 100, 10000); }
 export function readSettings(revision: number): Settings | undefined {
   const base = userSetting('apiBaseUrl', ''); const model = userSetting('model', '').trim();
   if (!base || !model) return undefined;

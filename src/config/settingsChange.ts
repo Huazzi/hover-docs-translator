@@ -10,6 +10,8 @@ export function isPresentationOnlyChange(previous: Settings | undefined, next: S
 export function applyConfigurationChange(previous: Settings | undefined, read: () => Settings | undefined, replace: (next: Settings) => void, refresh: () => void): void {
   let next: Settings | undefined;
   try { next = read(); } catch { refresh(); return; }
+  if (previous && next && [...new Set([...Object.keys(previous), ...Object.keys(next)])].every(key => previous[key as keyof Settings] === next[key as keyof Settings])) return;
+  if (!previous && !next) return;
   if (next && isPresentationOnlyChange(previous, next)) replace(next);
   else refresh();
 }

@@ -2,7 +2,7 @@
   "name": "hover-docs-translator",
   "displayName": "Hover Docs Translator",
   "description": "Translate Python and JavaScript hover documentation into Chinese using your cloud API.",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "publisher": "local-hover-docs",
   "private": true,
   "license": "MIT",
@@ -34,7 +34,9 @@
     "test:unit": "tsx --test test/unit/*.test.ts",
     "test:integration": "node scripts/integration.mjs",
     "package": "vsce package --no-dependencies --allow-missing-repository --no-rewrite-relative-links",
-    "vscode:prepublish": "npm run build"
+    "vscode:prepublish": "npm run build",
+    "test:takeover": "node scripts/integration.mjs --takeover",
+    "test:installed": "node scripts/installed-smoke.mjs"
   },
   "contributes": {
     "commands": [
@@ -77,6 +79,10 @@
       {
         "command": "hoverDocsTranslator.showDiagnostics",
         "title": "中文文档：打开诊断日志"
+      },
+      {
+        "command": "hoverDocsTranslator.selectHoverMode",
+        "title": "中文文档：选择悬停模式"
       }
     ],
     "configuration": {
@@ -108,11 +114,11 @@
           ],
           "enumDescriptions": [
             "中文阅读：紧凑中文说明，保留内容结构与示例。",
-            "中英对照：逐段先中文后原文；表格分别展示。"
+            "中英对照：稳定模式先中文后原文；实验接管每段原文后接中文，表格整表对照。"
           ],
           "default": "translationOnly",
           "scope": "machine",
-          "description": "插件区块显示方式，下一次悬停生效。原语言服务的英文始终保留；切换复用有效的译文缓存。"
+          "description": "下一次悬停生效，复用有效译文缓存。稳定模式保留语言服务原文；实验接管只重建一份，无法安全重建的片段保留原文。"
         },
         "hoverDocsTranslator.maxChars": {
           "type": "number",
@@ -177,6 +183,28 @@
           "maximum": 10080,
           "scope": "machine",
           "description": "进程内缓存有效时间（分钟），退出后清空。"
+        },
+        "hoverDocsTranslator.hoverMode": {
+          "type": "string",
+          "enum": [
+            "stable",
+            "experimentalTakeover"
+          ],
+          "enumDescriptions": [
+            "稳定追加：保留语言服务原文，追加译文。",
+            "实验接管：重建一份文档，需要显式启用 Proposed API；不可用时回退稳定模式。"
+          ],
+          "default": "stable",
+          "scope": "machine",
+          "description": "悬停工作模式。实验模式仅供自用，首次翻译可能先显示原文，下次悬停使用缓存译文。"
+        },
+        "hoverDocsTranslator.takeoverWaitMs": {
+          "type": "number",
+          "default": 2500,
+          "minimum": 100,
+          "maximum": 10000,
+          "scope": "machine",
+          "description": "实验接管取得原文后等待译文的上限（毫秒）。到期先显示原文，翻译在后台完成，下次悬停生效。"
         }
       }
     }
@@ -196,5 +224,8 @@
     "esbuild": "0.28.2",
     "tsx": "4.23.15",
     "typescript": "7.0.2"
-  }
+  },
+  "enabledApiProposals": [
+    "documentFiltersExclusive"
+  ]
 }

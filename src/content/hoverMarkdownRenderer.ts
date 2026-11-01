@@ -17,7 +17,7 @@ function sameText(a: PhrasingContent[], b: PhrasingContent[]): boolean {
   return serialize(a) === serialize(b);
 }
 /** Only sanitized source nodes and restored text nodes may reach this renderer. */
-export function renderMarkdown(root: Root, state: Presentation, paired: boolean): string {
+export function renderMarkdown(root: Root, state: Presentation, paired: boolean, originalFirst = false): string {
   function contains(node: Nodes, matches: (node: Nodes) => boolean): boolean {
     return matches(node) || ('children' in node && node.children.some(child => contains(child, matches)));
   }
@@ -30,7 +30,9 @@ export function renderMarkdown(root: Root, state: Presentation, paired: boolean)
 
     if (clone.type === 'heading' && node.type === 'heading') {
       clone.depth = state.headingDepths.get(node) ?? node.depth;
-      if (paired && translated && !sameText(translated, node.children)) clone.children.push({ type: 'text', value: ' · ' }, ...structuredClone(node.children));
+      if (paired && translated && !sameText(translated, node.children)) clone.children = originalFirst
+        ? [...structuredClone(node.children), { type: 'text', value: ' · ' }, ...clone.children]
+        : [...clone.children, { type: 'text', value: ' · ' }, ...structuredClone(node.children)];
     }
     if (withinTable) return [clone];
     if (node.type === 'table') {
@@ -40,11 +42,15 @@ export function renderMarkdown(root: Root, state: Presentation, paired: boolean)
       if (paired && contains(node, child => {
         const value = state.translated.get(child);
         return child.type === 'tableCell' && !!value && !sameText(value, child.children);
-      })) result.push(paragraph('原文表格'), structuredClone(node));
+      })) {
+        if (originalFirst) result.splice(result.length - 1, 0, structuredClone(node));
+        else result.push(paragraph('原文表格'), structuredClone(node));
+      }
       return result;
     }
     if (state.budgetSkipped.has(node)) return [paragraph(budgetLabel), clone];
     if (node.type === 'paragraph' && paired && translated && !sameText(translated, node.children)) {
+      if (originalFirst) return [structuredClone(node), clone];
       const original: Paragraph = { type: 'paragraph', children: [{ type: 'strong', children: [{ type: 'text', value: '原文：' }] }, ...structuredClone(node.children)] };
       return [clone, { type: 'blockquote', children: [original] }];
     }

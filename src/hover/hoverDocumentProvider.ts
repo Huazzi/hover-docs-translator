@@ -10,14 +10,17 @@ export interface ProviderDependencies {
   settings: () => Settings | undefined;
   permitted: (settings: Settings) => Promise<boolean>;
   onError: (code: string) => void;
+  lifetime?: AbortSignal;
 }
 export function createHoverProvider(deps: ProviderDependencies): vscode.HoverProvider {
   return { async provideHover(document, position, token) {
-    if (deps.discovery.busy) return undefined;
+    if (deps.discovery.busy || deps.lifetime?.aborted) return undefined;
     const config = deps.settings();
     if (!config?.enabled || token.isCancellationRequested || document.uri.scheme !== 'file' || !['python', 'javascript'].includes(document.languageId)) return undefined;
     const controller = new AbortController();
     const subscription = token.onCancellationRequested(() => controller.abort());
+    const dispose = () => controller.abort();
+    deps.lifetime?.addEventListener('abort', dispose, { once: true });
     const sameDocument = (changed: vscode.TextDocument) => changed.uri.toString() === document.uri.toString();
     const changed = vscode.workspace.onDidChangeTextDocument(event => { if (sameDocument(event.document)) controller.abort(); });
     const closed = vscode.workspace.onDidCloseTextDocument(doc => { if (sameDocument(doc)) controller.abort(); });
@@ -47,6 +50,6 @@ export function createHoverProvider(deps: ProviderDependencies): vscode.HoverPro
       const code = error && typeof error === 'object' && 'code' in error && typeof error.code === 'string' ? error.code : 'translation_failed';
       if (code !== 'cancelled') deps.onError(code);
       return undefined;
-    } finally { subscription.dispose(); changed.dispose(); closed.dispose(); tabs.dispose(); }
+    } finally { subscription.dispose(); deps.lifetime?.removeEventListener('abort', dispose); changed.dispose(); closed.dispose(); tabs.dispose(); }
   } };
 }

@@ -34,6 +34,9 @@ test('changing presentation cannot clear 401 block or 429 cooldown', async () =>
     const pool = new TranslationCoordinator(async () => { calls++; throw new TranslationError(code, 120000); }, new MemoryTranslationCache());
     const segments = [{ id: 's0', text: 'Description.' }];
     await assert.rejects(pool.acquire(segments, current, new AbortController().signal), new RegExp(code));
+    // Hover mode and wait preferences are outside the service snapshot; their event reads
+    // identical settings and must not clear cooldown/authentication state either.
+    applyConfigurationChange(current, () => ({ ...current }), next => { current = next; }, () => pool.reset());
     applyConfigurationChange(current, () => ({ ...current, paired: true }), next => { current = next; }, () => pool.reset());
     await assert.rejects(pool.acquire(segments, current, new AbortController().signal), new RegExp(subsequent));
     assert.equal(calls, 1); pool.reset();

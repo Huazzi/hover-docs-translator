@@ -64,3 +64,18 @@
 - 三主题可见DOM确认没有“中文说明”标题，对照表格/章节仍在；Python/JS样本、缓存分流与取消回归通过。日志 `.vscode-test/integration-0.2.1.log`。
 - 原生原文不能通过公共Hover API可靠隐藏或加前缀，故未添加可能错位的“完整原文”。一手来源与备选路线记录在 `docs/hover-original-boundary.md`。
 - 保留0.2.0安装包；没有修改用户的普通VSCode配置，也未进行付费云请求。
+
+## 0.3.0 实验接管验证（2026-11-01）
+
+- 保留稳定默认路径；新增自用 Proposed API 接管。运行环境为 Windows / VS Code1.144.0，Python/Pylance及内置JS/TS服务。
+- `npm run typecheck`、36项单元测试、构建和VSIX打包通过。
+- `npm run test:integration` 通过：原有三主题、Python/JS说明、排队/执行取消、显示快照和缓存检查；无实验API时实际选择接管自动回退稳定模式。日志 `.vscode-test/stable-030-integration.log`。
+- `npm run test:takeover` 通过：Python/JS并发原文读取、单份原文→中文、签名/跳转保留、原生DOM计数与截图、中文阅读缓存复用。无配置/暂停/无权限/纯中文、HTTP/结构错误等返回原文；原文对象的特殊链接/legacy代码保持不变，译文Markdown不继承信任。
+- 短等待用受控30ms预算验证：先原文，Hover token随后取消不终止受控后台任务；下次缓存命中、HTTP计数1。等待期取消仍终止请求；编辑/关闭/失效/dispose取消后台任务。原文失败或超时触发回退，合法空结果不误触发。
+- 单元覆盖在途源请求去重、跨文档并发、超时draining容量、迟到拒绝、模式能力门禁/失败锁存/过期探测、AST结构与签名、不可安全重建内容、身份译文去重和设置无变化不重置401/429保护。
+- `npm run test:installed` 将实际0.3.0 VSIX和只读探针安装到隔离目录，普通生产模式启动，无开发标志。未启用提案：原生+探针共2份Hover，稳定回退成功；显式启用：接管合并为1份，切稳定后恢复2份。两个结果文件位于 `.vscode-test/installed-030-{stable,proposed}/result.json`，日志 `.vscode-test/installed-030.log`。
+- 原型与实装区别已验证：本轮测试实际安装VSIX，不只是手动放置解包目录。测试探针也用VSIX安装，以进入新版扩展注册表。
+- 首轮测试发现并修正：getCommands只列内部后端名而非API别名；JS baseUri和Pylance不可见注释需要安全支持。测试脚本还修正了Electron环境变量必须删除（置空仍触发Node模式）的启动差异。
+- 没有调用用户DeepSeek Key或付费API、没有更改常用VSCode设置。当前接管翻译集成使用受控假传输，用户真实模型延迟与质量需实际使用验收。
+- 未承诺跨VSCode版本、所有库/扩展共存、原始多provider顺序、JS详细Hover展开、诊断内容消除、远程窗口或Web兼容。复杂标记片段保留英文是明确的保真回退。
+- 独立审查记录位于 `.planning/hover-takeover/review.md`。

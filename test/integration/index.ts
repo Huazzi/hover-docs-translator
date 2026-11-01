@@ -8,6 +8,7 @@ import { readSettings, userSetting, type Settings } from '../../src/config/setti
 import { hoverText } from './renderer.js';
 import { cancellationRegression } from './cancellation.js';
 import { displayRegression, richLanguageSamples } from './display.js';
+import { registrationSmoke } from './takeover.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export async function run(): Promise<void> {
@@ -82,4 +83,5 @@ export async function run(): Promise<void> {
   await cancellationRegression(settings);
   await displayRegression();
   await richLanguageSamples(settings);
+  await registrationSmoke(false);
 }
