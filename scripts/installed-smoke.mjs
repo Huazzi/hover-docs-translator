@@ -20,11 +20,11 @@ async function run(args, env = {}) {
   if (code) throw new Error(`VS Code exit ${code}`);
 }
 for (const proposed of [false, true]) {
-  const output = join(root, '.vscode-test', proposed ? 'installed-030-proposed' : 'installed-030-stable');
+  const output = join(root, '.vscode-test', proposed ? 'installed-031-proposed' : 'installed-031-stable');
   const user = join(output, 'user'); const extensions = join(output, 'extensions');
   await mkdir(join(user, 'User'), { recursive: true }); await mkdir(extensions, { recursive: true });
   await writeFile(join(user, 'User', 'settings.json'), JSON.stringify({ 'hoverDocsTranslator.hoverMode': 'experimentalTakeover', 'hoverDocsTranslator.enabled': false, 'security.workspace.trust.enabled': false }));
-  await run([cli, '--install-extension', join(root, 'hover-docs-translator-0.3.0.vsix'), '--force', '--extensions-dir', extensions, '--user-data-dir', user], { ELECTRON_RUN_AS_NODE: '1', VSCODE_DEV: '' });
+  await run([cli, '--install-extension', join(root, 'hover-docs-translator-0.3.1.vsix'), '--force', '--extensions-dir', extensions, '--user-data-dir', user], { ELECTRON_RUN_AS_NODE: '1', VSCODE_DEV: '' });
   const probe = join(output, 'probe-source'); await mkdir(probe, { recursive: true });
   await writeFile(join(probe, 'package.json'), JSON.stringify({ name: 'installed-hover-probe', publisher: 'local-research', version: '0.0.0', engines: { vscode: '^1.144.0' }, main: './extension.cjs', activationEvents: ['onStartupFinished'] }));
   await build({ entryPoints: [join(root, 'test/integration/installedSmoke.ts')], bundle: true, platform: 'node', format: 'cjs', external: ['vscode'], outfile: join(probe, 'extension.cjs') });

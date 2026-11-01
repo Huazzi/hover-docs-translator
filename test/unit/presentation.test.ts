@@ -20,31 +20,32 @@ test('compact titles normalize independently, preserve content, and leave segmen
   const compact = doc.render(result, false); const paired = doc.render(result, true);
   assert.deepEqual(nodes(compact, 'heading').map(h => h.type === 'heading' && h.depth), [4, 6, 4]);
   assert.equal(nodes(paired, 'heading').length, 3);
-  assert(paired.includes('译文 Main · Main'));
+  assert.deepEqual(paired, compact, 'Stable mode relies on the native original instead of copying it');
   assert.equal(nodes(paired, 'code').length, 1);
-  assert.equal(nodes(paired, 'blockquote').length, 2);
+  assert.equal(nodes(paired, 'blockquote').length, 0);
   assert(paired.includes('https://example.com')); assert(paired.includes('`value`'));
   assert.deepEqual(doc.segments, before);
   const framed = hoverMarkdown(compact, false);
   assert.equal(framed, compact); assert(!framed.includes('部分内容未翻译'));
 });
 
-test('paired lists keep numbering and nesting, with Chinese before quoted original', () => {
+test('stable paired lists keep numbering and nesting without additional original quotations', () => {
   const doc = extractMarkdown(['3. Read the value.\n4. Write the result.\n   - Keep this detail.\n\n> Read carefully.'], 6000)!;
   const output = doc.render(translated(doc), true);
   const lists = nodes(output, 'list');
   assert.equal(lists.length, 2);
   assert(lists[0].type === 'list' && lists[0].start === 3 && lists[0].children.length === 2);
   assert.equal(nodes(output, 'listItem').length, 3);
-  assert.equal(nodes(output, 'blockquote').length, 5); // Four source pairs plus source quotation.
-  assert(output.indexOf('译文 Read the value.') < output.indexOf('**原文：**'));
+  assert.equal(nodes(output, 'blockquote').length, 1); // Only the actual source quotation.
+  assert(!output.includes('原文：'));
+  assert.equal((output.match(/Read the value\./g) || []).length, 1);
 });
 
-test('paired tables retain shape and alignments without mixing languages in a cell', () => {
+test('stable paired tables retain shape without appending an original table', () => {
   const source = '| Parameter | Meaning |\n| :--- | ---: |\n| `path` | File path |';
   const doc = extractMarkdown([source], 6000)!;
   const tables = nodes(doc.render(translated(doc), true), 'table');
-  assert.equal(tables.length, 2);
+  assert.equal(tables.length, 1);
   for (const table of tables) { assert(table.type === 'table'); assert.deepEqual(table.align, ['left', 'right']); assert.equal(table.children.length, 2); assert(table.children.every(row => row.children.length === 2)); }
   assert.equal(nodes(doc.render(translated(doc), false), 'table').length, 1);
   const identity = Object.fromEntries(doc.segments.map(s => [s.id, s.text]));
@@ -85,5 +86,5 @@ test('paired content cannot activate injected HTML, code fences or command links
   const result = Object.fromEntries(doc.segments.map(s => [s.id, '[run](command:evil) <script>evil()</script> ```js ' + s.text]));
   const output = doc.render(result, true);
   assert.equal(nodes(output, 'html').length, 0); assert.equal(nodes(output, 'link').length, 0); assert.equal(nodes(output, 'code').length, 0);
-  assert.equal(nodes(output, 'inlineCode').length, 2);
+  assert.equal(nodes(output, 'inlineCode').length, 1);
 });

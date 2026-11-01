@@ -10,7 +10,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   try {
     assert.equal(context.extensionMode, vscode.ExtensionMode.Production);
     const extension = vscode.extensions.getExtension('local-hover-docs.hover-docs-translator')!;
-    assert(extension); await extension.activate(); assert.equal(extension.packageJSON.version, '0.3.0');
+    assert(extension); await extension.activate(); assert.equal(extension.packageJSON.version, '0.3.1');
     const doc = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, 'sample.js'));
     await vscode.window.showTextDocument(doc); await vscode.extensions.getExtension('vscode.typescript-language-features')?.activate();
     source = vscode.languages.registerHoverProvider('javascript', { provideHover() { return new vscode.Hover('Installed ordinary sentinel.'); } });

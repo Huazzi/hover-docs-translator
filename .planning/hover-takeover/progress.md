@@ -18,3 +18,11 @@
 - Final actual VSIX installed smoke passed again in both profiles. Private package SHA256 `CF6F1F8050C1C5A3A49F642E2B880024266403C122B92DA2BAD5FB4A594FC2E9`.
 - Previous0.2.1 SHA256 remains `8ED47A867BB71E05E2EF5B00EF1C4E649B80703B553B0356099A53647E0CB99A`.
 - No reviewer-driven edits required; final change only archives planning/review files excluded from package. Complete.
+
+## 0.3.1 — remove extra original blocks
+
+- User explicitly requested removing the unwanted appended “原文：” content and release0.3.1. Small local presentation change; no new lifecycle/permission design.
+- Stable renderer no longer copies source paragraphs/headings/tables; native original remains available. Experimental original-first pairing unchanged, no labels generated.
+- Updated existing unit/real-host regressions and mode descriptions; typecheck,36unit, stable three-theme integration and takeover integration passed.
+- Actual0.3.1 VSIX installed smoke passed with/without proposal flags in separate031profiles. Existing credentials/user settings untouched; no paid calls.
+- Package14entries331.77KB; SHA256 `AFC739D9D1ED0807EEF64549385A07BA8579A3A497590F4895FE77EC3B5708D2`. Previous0.3.0 hash unchanged.

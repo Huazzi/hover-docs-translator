@@ -43,7 +43,7 @@ export function registerCommands(context: vscode.ExtensionContext, deps: {
       const takeover = deps.modeState().effective === 'experimentalTakeover';
       const options = [
         { label: '中文阅读', value: 'translationOnly', detail: takeover ? '中文正文，保留签名、示例及无法翻译的原文。' : '插件区以中文呈现；语言服务原文仍保留。' },
-        { label: '中英对照', value: 'paired', detail: takeover ? '每段原文后紧接中文，不再追加整份原文。' : '逐段先中文、后原文，适合核对术语。' },
+        { label: '中英对照', value: 'paired', detail: takeover ? '每段原文后紧接中文，不再追加整份原文。' : '结合语言服务原文阅读译文，插件不再重复附加原文。' },
       ].map(option => ({ ...option, description: option.value === current ? '当前' : undefined }));
       const choice = await vscode.window.showQuickPick(options, { title: '选择显示方式', placeHolder: '下一次悬停生效；复用有效的译文缓存' });
       if (choice && choice.value !== displayMode()) {
