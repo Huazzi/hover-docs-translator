@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import type { ProviderDependencies } from './hoverDocumentProvider.js';
-import { prepareTakeover } from '../content/takeoverHoverContent.js';
+import { analyzeTakeover } from '../content/takeoverHoverContent.js';
 import { RecursiveHoverReader } from './recursiveHoverReader.js';
 import { waitFor } from './asyncWait.js';
 import { resolveHoverDocument, notebookContains } from './hoverDocumentScope.js';
@@ -41,10 +41,12 @@ export class ExperimentalHoverProvider implements vscode.HoverProvider, vscode.D
     if (this.disposed || token.isCancellationRequested) return undefined;
     const scope = resolveHoverDocument(document); if (!scope) return undefined;
     const config = this.deps.settings(); const version = document.version;
+    const activity = this.deps.activities?.begin({ uri: document.uri.toString(), version, line: position.line, character: position.character,
+      revision: config?.revision ?? -1, modeGeneration: this.deps.modeGeneration ?? 0, notebookUri: scope.notebook?.uri.toString() });
     const controller = new AbortController(); this.active.set(controller, { documentUri: document.uri.toString(), notebookUri: scope.notebook?.uri.toString() });
     const subscription = token.onCancellationRequested(() => controller.abort());
     const valid = () => !this.disposed && !controller.signal.aborted && !document.isClosed && notebookContains(scope, document) && document.version === version && this.deps.settings()?.revision === config?.revision;
-    const cleanup = () => { subscription.dispose(); this.active.delete(controller); };
+    const cleanup = () => { activity?.finish('cancelled'); subscription.dispose(); this.active.delete(controller); };
     let background = false;
     try {
       const key = JSON.stringify([document.uri.toString(), version, position.line, position.character]);
@@ -53,12 +55,13 @@ export class ExperimentalHoverProvider implements vscode.HoverProvider, vscode.D
         : vscode.commands.executeCommand<vscode.Hover[]>(RECURSIVE_HOVER_COMMAND, document.uri, position), controller.signal, config?.discoveryTimeoutMs ?? 5000);
       if (!valid()) return undefined;
       if (result.kind !== 'value') {
+        activity?.finish(result.kind === 'cancelled' ? 'cancelled' : 'failed', { code: 'source_' + result.kind });
         if (result.kind !== 'cancelled') this.deps.sourceFailed();
         return undefined;
       }
       const sources = (result.value || []).filter(hover => !hover.range || hover.range.contains(position));
       const contents = sources.flatMap(hover => hover.contents);
-      if (!contents.length) return undefined;
+      if (!contents.length) { activity?.finish('no_document'); return undefined; }
       // Use the intersection of applicable source ranges; do not extend a narrow source's validity.
       const range = sources.reduce<vscode.Range | undefined>((range, hover) => hover.range ? range?.intersection(hover.range) ?? hover.range : range, undefined)
         ?? document.getWordRangeAtPosition(position) ?? new vscode.Range(position, position);
@@ -67,17 +70,22 @@ export class ExperimentalHoverProvider implements vscode.HoverProvider, vscode.D
       try {
         if (!await this.deps.permitted(config)) return valid() ? original : undefined;
         if (!valid()) return undefined;
-        const prepared = prepareTakeover(contents, config.maxChars);
-        if (!prepared || this.translating >= config.concurrent + config.queueSize) return original;
+        const analysis = analyzeTakeover(contents, config.maxChars); const prepared = analysis.document;
+        if (!prepared) { activity?.finish(analysis.summary.unsafePreserved || analysis.summary.budgetPreserved ? 'preserved' : 'no_translatable_text', analysis.summary); return original; }
+        if (this.translating >= config.concurrent + config.queueSize) { activity?.finish('failed', { code: 'queue_full' }); return original; }
         this.translating++;
         // This subscription remains owned by this provider after the UI deadline. It is still
         // cancelled on document edits/close, permission/service changes, mode switch and disposal.
-        const work = this.deps.translations.acquire(prepared.segments, config, controller.signal).then(value => {
+        const work = this.deps.translations.acquire(prepared.segments, config, controller.signal, { observe: activity?.observe }).then(value => {
           if (!valid()) return undefined;
-          return new vscode.Hover(prepared.render(value, config.paired), range);
+          activity?.stage('rendering');
+          const translated = new vscode.Hover(prepared.render(value, config.paired), range);
+          activity?.finish('completed', analysis.summary);
+          return translated;
         }).catch(error => {
           if (valid()) {
             const code = error && typeof error === 'object' && typeof error.code === 'string' ? error.code : 'translation_failed';
+            activity?.finish(code === 'cancelled' ? 'cancelled' : 'failed', { code });
             if (code !== 'cancelled') this.deps.onError(code);
             return original;
           }
@@ -88,12 +96,13 @@ export class ExperimentalHoverProvider implements vscode.HoverProvider, vscode.D
         if (waited.kind === 'value') return waited.value;
         if (waited.kind === 'timeout') {
           background = true;
+          activity?.background();
           subscription.dispose(); // A hover closing after early return must not kill cache warming.
           return original;
         }
         return waited.kind === 'failed' ? original : undefined;
-      } catch { this.deps.onError('translation_failed'); return valid() ? original : undefined; }
-    } catch { if (valid()) this.deps.sourceFailed(); return undefined; }
+      } catch { if (valid()) { activity?.finish('failed', { code: 'translation_failed' }); this.deps.onError('translation_failed'); } return valid() ? original : undefined; }
+    } catch { if (valid()) { activity?.finish('failed', { code: 'source_failed' }); this.deps.sourceFailed(); } return undefined; }
     finally { if (!background) cleanup(); }
   }
 }

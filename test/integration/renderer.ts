@@ -5,7 +5,10 @@ export async function hoverPresentation(): Promise<HoverPresentation> {
 }
 /** Read the isolated test window's DOM over its local CDP port; never touches the user's window. */
 export async function hoverText(): Promise<string> {
-  return rendererValue<string>("document.querySelector('.monaco-hover')?.textContent || ''");
+  return (await hoverPresentation()).text;
+}
+export async function quickPickText(): Promise<string> {
+  return rendererValue<string>("([...document.querySelectorAll('.quick-input-widget')].find(e => e.getBoundingClientRect().width > 0))?.textContent || ''");
 }
 async function rendererValue<T>(expression: string): Promise<T> {
   const result = await rendererCommand<{ result: { value: T }; exceptionDetails?: unknown }>('Runtime.evaluate', { expression, returnByValue: true });

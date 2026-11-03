@@ -8,6 +8,7 @@ import { TranslationCoordinator } from '../../src/translation/translationCoordin
 import { MemoryTranslationCache } from '../../src/cache/memoryTranslationCache.js';
 import { TranslationError, type Segment, type Translations } from '../../src/translation/contracts.js';
 import type { Settings } from '../../src/config/settingsService.js';
+import { hoverText, captureVisibleHover } from './renderer.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function until(check: () => boolean, label: string) {
@@ -113,6 +114,16 @@ export async function notebookRegression(proposed: boolean): Promise<void> {
     if (proposed) assert.equal(result.length, 1);
     await vscode.commands.executeCommand('vscode.executeHoverProvider', document.uri, position);
     assert.equal(calls, 1, 'Notebook repeat uses translation cache');
+    await vscode.window.showNotebookDocument(notebook, { selections: [new vscode.NotebookRange(0, 1)] });
+    await vscode.commands.executeCommand('notebook.cell.edit');
+    await until(() => vscode.window.activeTextEditor?.document.uri.toString() === document.uri.toString(), 'Notebook code editor focus');
+    vscode.window.activeTextEditor!.selection = new vscode.Selection(position, position);
+    await vscode.commands.executeCommand('editor.action.showHover', { focus: 'noAutoFocus' });
+    let visible = '';
+    for (let i = 0; i < 40; i++) { visible = await hoverText(); if (visible.includes('笔记本中文译文')) break; await sleep(100); }
+    assert(visible.includes('笔记本中文译文'), 'Notebook visible translation missing: ' + visible);
+    await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, '..', '..', '.vscode-test', 'notebook-ui-' + proposed + '.png'), await captureVisibleHover());
+    await vscode.commands.executeCommand('editor.action.hideHover');
     current = { ...settings, paired: false };
     const chinese = (await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', document.uri, position)).map(text).join('\n');
     assert(chinese.includes('笔记本中文译文'));

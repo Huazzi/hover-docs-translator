@@ -4,6 +4,7 @@ const id = (endpoint: string) => `apiKey:${createHash('sha256').update(endpoint)
 export class CredentialStore {
   constructor(private secrets: vscode.SecretStorage) {}
   get(endpoint: string): Thenable<string | undefined> { return this.secrets.get(id(endpoint)); }
+  matches(endpoint: string, key: string): boolean { return id(endpoint) === key; }
   async set(endpoint: string, key: string): Promise<void> { await this.secrets.store(id(endpoint), key.trim()); }
   async clearAll(): Promise<void> { for (const key of await this.secrets.keys()) if (key.startsWith('apiKey:')) await this.secrets.delete(key); }
 }

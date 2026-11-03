@@ -10,6 +10,7 @@ import { hoverText, captureVisibleHover } from './renderer.js';
 import { notebookRegression } from './notebook.js';
 import { hoverSelectors } from '../../src/hover/hoverDocumentScope.js';
 import { languageRegression } from './languages.js';
+import { experienceRegression } from './experience.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 async function until(test: () => boolean, label: string) { for (let i = 0; i < 100; i++) { if (test()) return; await sleep(20); } throw new Error(label); }
@@ -128,6 +129,7 @@ export async function run(): Promise<void> {
   await languageRegression(true);
   await vscode.extensions.getExtension('local-hover-docs.hover-docs-translator')?.activate();
   await registrationSmoke(true);
+  await experienceRegression(true);
   const documents: vscode.TextDocument[] = [];
   for (const [file, line] of [['sample.js', 3], ['sample.py', 6]] as const) {
     const document = await vscode.workspace.openTextDocument(vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, file));

@@ -8,6 +8,7 @@ import { TranslationCoordinator } from '../../src/translation/translationCoordin
 import { MemoryTranslationCache } from '../../src/cache/memoryTranslationCache.js';
 import { TranslationError, type Segment } from '../../src/translation/contracts.js';
 import type { Settings } from '../../src/config/settingsService.js';
+import { hoverText, captureVisibleHover } from './renderer.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 const text = (hovers: vscode.Hover[]) => hovers.flatMap(hover => hover.contents.map(content => typeof content === 'string' ? content : content.value)).join('\n');
@@ -53,6 +54,16 @@ export async function languageRegression(proposed: boolean): Promise<void> {
       assert(rendered.includes(signature)); assert(rendered.includes(sample.parameter));
       assert(!captured.some(segment => segment.text.includes(sample.call) || segment.text.includes(signature)), 'Signature/example code must stay local');
       assert.equal(calls, 1); assert.equal(errors.length, 0);
+      const editor = await vscode.window.showTextDocument(document);
+      await vscode.commands.executeCommand('editor.action.hideHover');
+      editor.selection = new vscode.Selection(position, position);
+      await sleep(100);
+      await vscode.commands.executeCommand('editor.action.showHover', { focus: 'noAutoFocus' });
+      let visible = '';
+      for (let i = 0; i < 40; i++) { visible = await hoverText(); if (visible.includes('新语言中文译文')) break; await sleep(100); }
+      assert(visible.includes('新语言中文译文'), sample.language + ' visible translation missing: ' + visible);
+      await vscode.workspace.fs.writeFile(vscode.Uri.joinPath(vscode.workspace.workspaceFolders![0].uri, '..', '..', '.vscode-test', 'language-ui-' + sample.language + '-' + proposed + '.png'), await captureVisibleHover());
+      await vscode.commands.executeCommand('editor.action.hideHover');
       if (proposed) { assert.equal(translated.length, 1); assert(rendered.includes(sample.prose)); }
       current = { ...settings, paired: false };
       const chinese = text(await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', uri, position));
@@ -68,6 +79,8 @@ export async function languageRegression(proposed: boolean): Promise<void> {
         // Red Hat emits @throws navigation as a trusted command link. Takeover must
         // preserve that source fragment; stable append may translate its sanitized prose.
         fail = false; pool.reset(); const previousCalls = calls;
+        assert(pool.snapshot(settings).cooldownRemainingMs > 0, 'Clearing cache must retain failure cooldown');
+        await sleep(pool.snapshot(settings).cooldownRemainingMs + 20);
         const richPosition = document.positionAt(document.getText().lastIndexOf('greetReader("reader");') + 1);
         const rich = text(await vscode.commands.executeCommand<vscode.Hover[]>('vscode.executeHoverProvider', uri, richPosition));
         assert(rich.includes('Returns a Java greeting')); assert(rich.includes('command:java.open.file'));

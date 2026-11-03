@@ -11,6 +11,7 @@ import { displayRegression, richLanguageSamples } from './display.js';
 import { registrationSmoke } from './takeover.js';
 import { notebookRegression } from './notebook.js';
 import { languageRegression } from './languages.js';
+import { experienceRegression } from './experience.js';
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 export async function run(): Promise<void> {
@@ -88,4 +89,5 @@ export async function run(): Promise<void> {
   await displayRegression();
   await richLanguageSamples(settings);
   await registrationSmoke(false);
+  await experienceRegression(false);
 }

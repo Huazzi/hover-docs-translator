@@ -2,7 +2,7 @@
   "name": "hover-docs-translator",
   "displayName": "悬浮翻译 · Hover Docs Translator",
   "description": "Translate Python, JavaScript, Java and TypeScript hover documentation into Chinese using your cloud API.",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "publisher": "local-hover-docs",
   "private": true,
   "license": "MIT",
@@ -42,6 +42,22 @@
   },
   "contributes": {
     "commands": [
+      {
+        "command": "hoverDocsTranslator.showCurrentHover",
+        "title": "悬浮翻译：查看光标处文档翻译"
+      },
+      {
+        "command": "hoverDocsTranslator.checkConfiguration",
+        "title": "悬浮翻译：检查配置与当前状态"
+      },
+      {
+        "command": "hoverDocsTranslator.testConnection",
+        "title": "悬浮翻译：测试当前接口连接"
+      },
+      {
+        "command": "hoverDocsTranslator.copyDiagnosticSummary",
+        "title": "悬浮翻译：复制诊断摘要"
+      },
       {
         "command": "hoverDocsTranslator.menu",
         "title": "悬浮翻译：打开菜单"

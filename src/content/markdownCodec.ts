@@ -16,6 +16,7 @@ export interface ProtectedDocument {
   renderFragments: (result: Translations, paired: boolean) => (string | undefined)[];
 }
 export interface SourceFragment { value: string; sourceId: number; contentIndex: number }
+export interface ContentSummary { selected: number; budgetPreserved: number; excluded: number; unsafePreserved: number }
 function english(text: string): boolean {
   const latin = (text.match(/[a-z]/gi) || []).length;
   const chinese = (text.match(/[\u3400-\u9fff]/g) || []).length;
@@ -110,6 +111,10 @@ export function canRebuildMarkdown(value: string): boolean {
   return safe(tree);
 }
 export function extractMarkdown(contents: (string | SourceFragment)[], maxChars: number, takeover = false): ProtectedDocument | undefined {
+  return analyzeMarkdown(contents, maxChars, takeover).document;
+}
+export function analyzeMarkdown(contents: (string | SourceFragment)[], maxChars: number, takeover = false): { document?: ProtectedDocument; summary: ContentSummary } {
+  const summary: ContentSummary = { selected: 0, budgetPreserved: 0, excluded: 0, unsafePreserved: 0 };
   const root: Root = { type: 'root', children: [] };
   const fragments = new Map<string, { tree: Root; sources: SourceFragment[] }>();
   const headingDepths = new Map<Nodes, Heading['depth']>();
@@ -133,17 +138,17 @@ export function extractMarkdown(contents: (string | SourceFragment)[], maxChars:
   function walk(node: Nodes): void {
     if (node.type === 'paragraph' || node.type === 'heading' || node.type === 'tableCell') {
       const text = prose(node);
-      if (!english(text) || signatureOnly(text) || /(?:[A-Za-z]:\\|\/(?:home|Users|tmp)\/)/.test(text) || /⟦HDT_[^⟧]*⟧/.test(text)) return;
+      if (!english(text) || signatureOnly(text) || /(?:[A-Za-z]:\\|\/(?:home|Users|tmp)\/)/.test(text) || /⟦HDT_[^⟧]*⟧/.test(text)) { summary.excluded++; return; }
       const unit = protect(node, `s${segments.length}`); const previous = seen.get(unit.segment.text);
       const cost = previous ? 0 : unit.segment.text.length;
-      if (exhausted || chars + cost > maxChars) { partial = true; exhausted = true; budgetSkipped.add(node); return; }
+      if (exhausted || chars + cost > maxChars) { partial = true; exhausted = true; budgetSkipped.add(node); summary.budgetPreserved++; return; }
       if (previous) unit.segment = previous;
       else { segments.push(unit.segment); seen.set(unit.segment.text, unit.segment); chars += cost; }
-      units.set(node, unit); return;
+      units.set(node, unit); summary.selected++; return;
     }
     if ('children' in node) node.children.forEach(walk);
   }
-  walk(root); if (!segments.length) return undefined;
+  walk(root); if (!segments.length) return { summary };
   const omitted = new Set<Nodes>();
   const hasProse = (node: Nodes): boolean => units.has(node as Block) || budgetSkipped.has(node) || ('children' in node && node.children.some(hasProse));
   const proseSources = new Set([...fragments.values()].filter(f => hasProse(f.tree)).flatMap(f => f.sources.map(s => s.sourceId)));
@@ -160,7 +165,7 @@ export function extractMarkdown(contents: (string | SourceFragment)[], maxChars:
     for (const [node, unit] of units) translated.set(node, restore(unit, result[unit.segment.id]));
     return { translated, budgetSkipped, omitted: takeover ? new Set<Nodes>() : omitted, headingDepths };
   }
-  return { segments, partial, render(result, paired) {
+  return { summary, document: { segments, partial, render(result, paired) {
     return renderMarkdown(root, presentation(result), paired, takeover);
   }, renderFragments(result, paired) {
     const state = presentation(result);
@@ -168,7 +173,7 @@ export function extractMarkdown(contents: (string | SourceFragment)[], maxChars:
       const tree = fragments.get(typeof content === 'string' ? content : content.value)!.tree;
       return hasProse(tree) ? renderMarkdown(tree, state, paired, takeover) : undefined;
     });
-  } };
+  } } };
 }
 
 export function validateTranslation(raw: string, segments: Segment[]): Translations {

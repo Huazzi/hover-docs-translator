@@ -34,7 +34,7 @@ test('last subscriber cancellation aborts HTTP; queue and rate are bounded', asy
   a.abort(); await check; assert(aborted); pool.reset();
   const rate = new TranslationCoordinator(async () => ({ s0: '译文' }), new MemoryTranslationCache());
   await rate.acquire(segments, { ...config, perMinute: 1 }, signal());
-  await assert.rejects(rate.acquire([{ id: 's0', text: 'different' }], { ...config, perMinute: 1 }, signal()), /cooldown/);
+  await assert.rejects(rate.acquire([{ id: 's0', text: 'different' }], { ...config, perMinute: 1 }, signal()), /rate_limited/);
 });
 test('401 blocks automatic requests until explicit configuration reset', async () => {
   let calls = 0;

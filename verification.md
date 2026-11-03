@@ -1,5 +1,20 @@
 # 首版验证记录
 
+## 0.5.0 实施验证（2026-11-02，批准修复与打包）
+
+此段为最新实施记录，下文保留历次版本证据。manifest和lockfile已升级0.5.0，产物为hover-docs-translator-0.5.0.vsix。
+
+- 环境：Windows、VS Code1.144.0（2c33b50b16）、Microsoft Python2026.10.0、Pylance2026.4.1、Red Hat Java1.58.0与内置JS/TS服务，沿用隔离测试profile。
+- typecheck、build通过，84个单元测试通过（含30例质量结构夹具、状态归属、配置诊断脱敏、固定样本单次确认/去重/取消、401/429及频率保护，以及两项命令层通知生命周期回归）。
+- test:integration和test:takeover完整通过。新体验验证：原生光标处查看、阶段观察、缓存复用、接管后台完成不重开已关闭窗口、异步检查期间换光标不打开旧目标、真实诊断QuickPick内容可见。
+- Java/TypeScript/Notebook两种模式的可见Hover断言通过，截图位于.vscode-test/language-ui-{java,typescript}-{false,true}.png、notebook-ui-{false,true}.png；新等待体验截图experience-{false,true}.png。原有三主题、Pylance/JS、语言范围、Notebook排队/执行/后台取消、权限和原文回退回归通过。
+- 日志：.vscode-test/experience-unit.log、experience-stable.log、experience-takeover.log。截图/日志仅本机验证，不纳入安装包。
+- 修正测试观察器只读取可见Hover；Java模拟失败后按新约定等待保留的冷却，不通过reset绕过保护。诊断QuickPick等待列表内容渲染而非仅标题。
+- 三路只读审查：OCR24/24可审文件，追加7/7被排除测试/夹具。用户批准唯一P2修复：testing锁仅覆盖probe.run，结果通知不再持锁。成功/失败通知未关闭时可新测，在途仍去重，关闭旧通知不解锁新请求。两项新回归在旧实现失败、修复后通过。处置及精确范围见[审查记录](.planning/next-stage-roadmap/review.md)。未声称定点修复后又做过新一轮全量审查。
+- 实际0.5.0 VSIX在Windows隔离profile分别安装，Production模式两次通过：无实验权限回退稳定；有权限接管后可恢复稳定。确认版本、Java/TS/JS激活、原文完整与四个新增命令注册。安装冒烟使用受控源文档，不等同于真实云端测试。结果位于.vscode-test/installed-0.5.0-{stable,proposed}/result.json。
+- 修复后的验证为typecheck、84项单元、构建/打包与实际安装冒烟；上文两套完整语言/UI集成在本轮核心实现完成后执行并通过，未因仅通知锁修复而重复整套。
+- 未执行真实云端API或语义评分，未改变提示词；[质量基线](docs/quality-baseline.md)将真实模型结果明确标为未评估。G4复杂分片与G5自动刷新未接入。未修改日常安装的扩展或用户API设置。
+
 日期：2026-10-30；状态：独立审查完成，用户批准的 5 项修复已完成并回归验证。
 
 ## 环境

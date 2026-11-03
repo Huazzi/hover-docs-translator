@@ -14,6 +14,10 @@ test('credentials are endpoint-bound and clearing affects only this extension na
   assert.equal(await store.get('https://two.example/chat/completions'), undefined);
   assert.equal(await store.get('https://one.example/chat/completions'), 'secret');
   assert(![...values.keys()].some(k => k.includes('secret') || k.includes('one.example')));
+  const credentialKey = [...values.keys()].find(k => k.startsWith('apiKey:'))!;
+  assert(store.matches('https://one.example/chat/completions', credentialKey));
+  assert(!store.matches('https://two.example/chat/completions', credentialKey));
+  assert(!store.matches('https://one.example/chat/completions', 'unrelated'));
   await store.clearAll(); assert.deepEqual([...values.entries()], [['unrelated', 'retain']]);
 });
 test('cloud consent is explicit per endpoint and revocable without storing documents', async () => {

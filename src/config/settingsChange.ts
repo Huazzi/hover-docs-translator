@@ -1,5 +1,16 @@
 import type { Settings } from './settingsService.js';
 
+/** Invalid intermediate settings never erase the last valid service identity. */
+export class ServiceIdentity {
+  private last?: string;
+  update(config: Pick<Settings, 'endpoint' | 'model'> | undefined): boolean {
+    if (!config) return false;
+    const next = JSON.stringify([config.endpoint, config.model]);
+    const changed = this.last !== undefined && next !== this.last;
+    this.last = next; return changed;
+  }
+}
+
 export function isPresentationOnlyChange(previous: Settings | undefined, next: Settings | undefined): boolean {
   if (!previous || !next || previous.paired === next.paired) return false;
   const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);

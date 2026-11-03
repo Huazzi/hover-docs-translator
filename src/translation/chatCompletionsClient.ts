@@ -1,6 +1,6 @@
 import { TranslationError, type Segment, type ServiceConfig, type Translations } from './contracts.js';
 import { validateTranslation } from '../content/markdownCodec.js';
-export const PROMPT_VERSION = '2';
+export { PROMPT_VERSION } from './translationVersion.js';
 export type Translator = (segments: Segment[], config: ServiceConfig, signal: AbortSignal) => Promise<Translations>;
 export function createTranslator(getKey: (endpoint: string) => Promise<string | undefined>, transport: typeof fetch = fetch): Translator {
   return async (segments, config, signal) => {

@@ -23,6 +23,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       assert.equal(extension.packageJSON.version, process.env.HDT_INSTALLED_VERSION);
       assert(extension.packageJSON.activationEvents.includes(`onLanguage:${language}`));
       result.version = extension.packageJSON.version;
+      const registeredCommands = await vscode.commands.getCommands(true);
+      const experienceCommands = ['showCurrentHover', 'checkConfiguration', 'testConnection', 'copyDiagnosticSummary'];
+      for (const name of experienceCommands) assert(registeredCommands.includes('hoverDocsTranslator.' + name), 'Installed command missing: ' + name);
+      result.experienceCommands = experienceCommands;
       for (const marker of ['A', 'B']) sources.push(vscode.languages.registerHoverProvider({ language, scheme: 'file' }, { provideHover() { return new vscode.Hover(`Installed ${language} ordinary sentinel ${marker}.`); } }));
       const config = vscode.workspace.getConfiguration('hoverDocsTranslator');
       await config.update('hoverMode', 'experimentalTakeover', vscode.ConfigurationTarget.Global);

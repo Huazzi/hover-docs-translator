@@ -5,9 +5,11 @@ import { normalizeEndpoint } from '../config/endpoint.js';
 import type { CredentialStore } from '../security/credentialStore.js';
 import type { ConsentStore } from '../security/consentStore.js';
 import type { Diagnostics } from './diagnostics.js';
+import type { ExperienceCommands } from './experienceCommands.js';
 export function registerCommands(context: vscode.ExtensionContext, deps: {
   settings: () => Settings | undefined; credentials: CredentialStore; consent: ConsentStore;
-  invalidate: () => void; clearCache: () => void; diagnostics: Diagnostics;
+  invalidate: (credentialChange?: boolean) => void; clearCache: () => void; diagnostics: Diagnostics;
+  experience: ExperienceCommands;
   modeState: () => Readonly<ModeState>; retryMode: () => Promise<void>;
 }): void {
   const settings = vscode.workspace.getConfiguration(NAMESPACE);
@@ -20,9 +22,10 @@ export function registerCommands(context: vscode.ExtensionContext, deps: {
   async function key(): Promise<void> {
     const config = deps.settings(); if (!config) { void vscode.window.showInformationMessage('请先配置 API 根路径和模型。'); return; }
     const value = await vscode.window.showInputBox({ title: '设置 API Key', prompt: '密钥仅用于当前接口，保存在 VS Code SecretStorage。', password: true, ignoreFocusOut: true, validateInput: s => s.trim() ? undefined : '请输入密钥' });
-    if (value !== undefined && config.endpoint === deps.settings()?.endpoint) { await deps.credentials.set(config.endpoint, value); deps.invalidate(); }
+    if (value !== undefined && config.endpoint === deps.settings()?.endpoint) { await deps.credentials.set(config.endpoint, value); deps.invalidate(true); }
   }
   const commands: Record<string, () => unknown> = {
+    ...deps.experience,
     async configure() {
       const base = await vscode.window.showInputBox({ title: 'API 根路径', prompt: '填写供应商 API 根路径（需要 /v1 时请保留），程序追加 /chat/completions。', value: settings.inspect<string>('apiBaseUrl')?.globalValue || '', ignoreFocusOut: true, validateInput: value => { try { normalizeEndpoint(value); return undefined; } catch (e) { return e instanceof Error ? e.message : '地址无效'; } } });
       if (!base) return;
@@ -34,7 +37,7 @@ export function registerCommands(context: vscode.ExtensionContext, deps: {
       await key(); await grant();
     },
     setApiKey: key,
-    async clearApiKeys() { await deps.credentials.clearAll(); deps.invalidate(); },
+    async clearApiKeys() { await deps.credentials.clearAll(); deps.invalidate(true); },
     grantConsent: grant,
     async revokeConsent() { await deps.consent.revokeAll(); deps.invalidate(); },
     async toggle() { await settings.update('enabled', !deps.settings()?.enabled, vscode.ConfigurationTarget.Global); },
@@ -73,6 +76,8 @@ export function registerCommands(context: vscode.ExtensionContext, deps: {
     showDiagnostics() { deps.diagnostics.output.show(); },
     async menu() {
       const options = [
+        ['查看光标处文档翻译', 'showCurrentHover'], ['检查配置与当前状态', 'checkConfiguration'],
+        ['测试当前接口连接', 'testConnection'], ['预览并复制诊断摘要', 'copyDiagnosticSummary'],
         ['配置接口、模型与密钥', 'configure'], ['设置 API Key', 'setApiKey'], ['确认云端发送', 'grantConsent'],
         ['暂停/恢复自动翻译', 'toggle'], [`悬停模式 · ${deps.modeState().effective === 'experimentalTakeover' ? '实验接管' : '稳定'}${deps.modeState().reason ? '（已回退）' : ''}`, 'selectHoverMode'], [`显示方式 · ${displayMode() === 'paired' ? '中英对照' : '中文阅读'}`, 'toggleDisplay'], ['清空缓存', 'clearCache'],
         ['撤回云端发送同意', 'revokeConsent'], ['清除全部 API Key', 'clearApiKeys'], ['打开诊断日志', 'showDiagnostics'],
